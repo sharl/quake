@@ -12,6 +12,8 @@ import schedule
 
 TITLE = 'quake'
 INTERVAL = 1
+# https://www.jma.go.jp/jma/kishou/know/shindo/index.html
+QUAKE_CLASS = '0 1 2 3 4 5弱 5強 6弱 6強 7'.split()
 
 
 class taskTray:
@@ -65,26 +67,31 @@ class taskTray:
                     if data.get('report_time'):
                         if self.status != data:
                             print(data)
+                            calcintensity = data.get('calcintensity')
                             lines = [
                                 '【訓練】' if data.get('is_training') else '',
                                 data.get('report_time') + (' 最終報' if data.get('is_final') else f' 第{data.get("report_num")}報'),
                                 data.get('region_name'),
                                 f'M{data.get("magunitude")} 深さ {data.get("depth")}',
-                                f'最大予測震度 {data.get("calcintensity")}',
+                                f'最大予測震度 {calcintensity}',
                             ]
                             self.app.title = '\n'.join(lines).strip()
                             self.app.update_menu()
 
-                            # hamu
+                            # result in one line
                             result = ' '.join(lines).strip()
                             print(result)
-                            requests.post(
-                                'http://localhost:16543/chat_postMessage',
-                                json={
-                                    'channel': 'dev',
-                                    'text': result,
-                                }
-                            )
+
+                            # hamu
+                            # 震度2以上
+                            if calcintensity in QUAKE_CLASS[2:]:
+                                requests.post(
+                                    'http://localhost:16543/chat_postMessage',
+                                    json={
+                                        'channel': 'dev',
+                                        'text': result,
+                                    }
+                                )
 
                             self.status = data
                     break
