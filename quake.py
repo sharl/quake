@@ -5,6 +5,7 @@ import ctypes
 import io
 import threading
 import time
+import webbrowser
 
 from PIL import Image
 from pystray import Icon, Menu, MenuItem
@@ -14,6 +15,7 @@ import schedule
 
 TITLE = 'quake'
 INTERVAL = 1
+KMONI = 'http://www.kmoni.bosai.go.jp'
 # https://www.jma.go.jp/jma/kishou/know/shindo/index.html
 QUAKE_CLASS = '0 1 2 3 4 5弱 5強 6弱 6強 7'.split()
 PreferredAppMode = {
@@ -29,12 +31,41 @@ class taskTray:
         self.running = False
         # quake status
         self.status = {}
+        # quake class check: 0, 1 is False
+        self.quake_check = {i: (i not in ['0', '1']) for i in QUAKE_CLASS}
 
         image = Image.open(io.BytesIO(binascii.unhexlify(ICON.replace('\n', '').strip())))
-        menu = Menu(
-            MenuItem('Exit', self.stopApp),
-        )
+        item = [
+            MenuItem(TITLE, self.doOpen, default=True),
+            Menu.SEPARATOR,
+            MenuItem('Set All', self.setAll),
+            MenuItem('Unset All', self.unsetAll),
+            Menu.SEPARATOR,
+        ]
+        for i in self.quake_check:
+            item.append(MenuItem(i, self.toggle, checked=lambda x: self.quake_check[str(x)]))
+        item.append(Menu.SEPARATOR)
+        item.append(MenuItem('Exit', self.stopApp))
+        menu = Menu(*item)
         self.app = Icon(name=f'PYTHON.win32.{TITLE}', title=TITLE, icon=image, menu=menu)
+
+    def doOpen(self):
+        webbrowser.open(KMONI)
+
+    def setAll(self):
+        for i in self.quake_check:
+            self.quake_check[i] = True
+        self.app.update_menu()
+
+    def unsetAll(self):
+        for i in self.quake_check:
+            self.quake_check[i] = False
+        self.app.update_menu()
+
+    def toggle(self, _, _item):
+        item = str(_item)
+        self.quake_check[item] = not self.quake_check[item]
+        self.app.update_menu()
 
     def doTask(self):
         # {
@@ -67,7 +98,7 @@ class taskTray:
         # }
         for t in range(2, 10):
             now = datetime.now() - timedelta(seconds=t)
-            url = f'http://www.kmoni.bosai.go.jp/webservice/hypo/eew/{now.strftime("%Y%m%d%H%M%S")}.json'
+            url = f'{KMONI}/webservice/hypo/eew/{now.strftime("%Y%m%d%H%M%S")}.json'
             try:
                 with requests.get(url, timeout=1) as r:
                     data = r.json()
@@ -91,8 +122,8 @@ class taskTray:
                             print(result)
 
                             # hamu
-                            # 震度2以上
-                            if calcintensity in QUAKE_CLASS[2:]:
+                            # 指定された震度の場合のみ送信
+                            if self.quake_check[calcintensity]:
                                 requests.post(
                                     'http://localhost:16543/chat_postMessage',
                                     json={
