@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime, timedelta
 import binascii
+import ctypes
 import io
 import threading
 import time
 
 from PIL import Image
 from pystray import Icon, Menu, MenuItem
+import darkdetect as dd
 import requests
 import schedule
 
@@ -14,6 +16,12 @@ TITLE = 'quake'
 INTERVAL = 1
 # https://www.jma.go.jp/jma/kishou/know/shindo/index.html
 QUAKE_CLASS = '0 1 2 3 4 5弱 5強 6弱 6強 7'.split()
+PreferredAppMode = {
+    'Light': 0,
+    'Dark': 1,
+}
+# https://github.com/moses-palmer/pystray/issues/130
+ctypes.windll['uxtheme.dll'][135](PreferredAppMode[dd.theme()])
 
 
 class taskTray:
