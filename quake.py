@@ -3,6 +3,8 @@ from datetime import datetime, timedelta
 import binascii
 import ctypes
 import io
+import logging
+import logging.handlers
 import threading
 import time
 import webbrowser
@@ -26,13 +28,26 @@ PreferredAppMode = {
 ctypes.windll['uxtheme.dll'][135](PreferredAppMode[dd.theme()])
 
 
+# logger settings
+logging.basicConfig(
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[
+        logging.handlers.RotatingFileHandler("log.log", maxBytes=1000000, backupCount=0),
+        logging.StreamHandler(),
+    ],
+    datefmt='%x %X'
+)
+logger = logging.getLogger(TITLE)
+logger.setLevel(logging.DEBUG)
+
+
 class taskTray:
     def __init__(self):
         self.running = False
         # quake status
         self.status = {}
         # hamu report
-        self.repord_id = str()
+        self.report_id = str()
         # quake class check: 0, 1 is False
         self.quake_check = {i: (i not in ['0', '1']) for i in QUAKE_CLASS}
 
@@ -107,7 +122,7 @@ class taskTray:
                     # print(url, t)
                     if data.get('report_time'):
                         if self.status != data:
-                            # print(data)
+                            logger.info(data)
                             calcintensity = data.get('calcintensity')
                             lines = [
                                 '【訓練】' if data.get('is_training') else '',
@@ -121,7 +136,7 @@ class taskTray:
 
                             # result in one line
                             result = ' '.join(lines).strip()
-                            print(result)
+                            logger.info(result)
 
                             # hamu
                             # 指定された震度の場合のみ送信
