@@ -31,6 +31,8 @@ class taskTray:
         self.running = False
         # quake status
         self.status = {}
+        # hamu report
+        self.repord_id = str()
         # quake class check: 0, 1 is False
         self.quake_check = {i: (i not in ['0', '1']) for i in QUAKE_CLASS}
 
@@ -105,7 +107,7 @@ class taskTray:
                     # print(url, t)
                     if data.get('report_time'):
                         if self.status != data:
-                            print(data)
+                            # print(data)
                             calcintensity = data.get('calcintensity')
                             lines = [
                                 '【訓練】' if data.get('is_training') else '',
@@ -123,14 +125,16 @@ class taskTray:
 
                             # hamu
                             # 指定された震度の場合のみ送信
-                            if self.quake_check[calcintensity]:
+                            report_id = data.get('report_id')
+                            if self.quake_check[calcintensity] and self.report_id != report_id:
                                 requests.post(
                                     'http://localhost:16543/chat_postMessage',
                                     json={
-                                        'channel': 'dev',
+                                        # 'channel': 'dev',
                                         'text': result,
                                     }
                                 )
+                                self.report_id = report_id
 
                             self.status = data
                     break
