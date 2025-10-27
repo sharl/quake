@@ -32,7 +32,7 @@ ctypes.windll['uxtheme.dll'][135](PreferredAppMode[dd.theme()])
 logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[
-        logging.handlers.RotatingFileHandler("log.log", maxBytes=1000000, backupCount=0),
+        logging.handlers.RotatingFileHandler("log.log", encoding='utf-8', maxBytes=1000000, backupCount=0),
         logging.StreamHandler(),
     ],
     datefmt='%x %X'
