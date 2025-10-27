@@ -153,6 +153,8 @@ class taskTray:
 
                             self.status = data
                     break
+            except requests.exceptions.Timeout:
+                print('Timeout', url, t)
             except Exception as e:
                 print('Exception', e, url, t)
 
