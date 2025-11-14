@@ -48,8 +48,8 @@ class taskTray:
         self.status = {}
         # hamu report
         self.report_id = str()
-        # quake class check: 0, 1 is False
-        self.quake_check = {i: (i not in ['0', '1']) for i in QUAKE_CLASS}
+        # quake class check: 0, 1, 2 is False
+        self.quake_check = {i: (i not in ['0', '1', '2']) for i in QUAKE_CLASS}
 
         image = Image.open(io.BytesIO(binascii.unhexlify(ICON.replace('\n', '').strip())))
         item = [
@@ -122,7 +122,7 @@ class taskTray:
                     # print(url, t)
                     if data.get('report_time'):
                         if self.status != data:
-                            logger.info(data)
+                            logger.debug(data)
                             calcintensity = data.get('calcintensity')
                             lines = [
                                 '【訓練】' if data.get('is_training') else '',
@@ -138,7 +138,7 @@ class taskTray:
                             result = ' '.join(lines).strip()
                             logger.info(result)
 
-                            # hamu
+                            # slackbot
                             # 指定された震度の場合のみ送信
                             report_id = data.get('report_id')
                             if self.quake_check[calcintensity] and self.report_id != report_id:
@@ -146,17 +146,19 @@ class taskTray:
                                     'http://localhost:16543/chat_postMessage',
                                     json={
                                         # 'channel': 'dev',
+                                        'icon_emoji': 'hamu2',
                                         'text': result,
                                     }
                                 )
                                 self.report_id = report_id
 
                             self.status = data
-                    break
             except requests.exceptions.Timeout:
-                print('Timeout', url, t)
+                logger.warning(f'Timeout {url} {t}')
             except Exception as e:
-                print('Exception', e, url, t)
+                logger.warning(f'Exception {e} {url} {t}')
+            finally:
+                break
 
     def runSchedule(self):
         schedule.every(INTERVAL).seconds.do(self.doTask)
