@@ -48,6 +48,7 @@ class taskTray:
         self.status = {}
         # hamu report
         self.report_id = str()
+        self.url_reported = False
         # quake class check: 0, 1, 2 is False
         self.quake_check = {i: (i not in ['0', '1', '2']) for i in QUAKE_CLASS}
 
@@ -113,13 +114,13 @@ class taskTray:
         #   "report_id": "20251024092722",
         #   "alertflg": "予報"
         # }
-        for t in range(2, 10):
+        for t in range(0, 3):
             now = datetime.now() - timedelta(seconds=t)
             url = f'{KMONI}/webservice/hypo/eew/{now.strftime("%Y%m%d%H%M%S")}.json'
             try:
+                # print(f'try {url} {t}')
                 with requests.get(url, timeout=1) as r:
                     data = r.json()
-                    # print(url, t)
                     if data.get('report_time'):
                         if self.status != data:
                             logger.debug(data)
@@ -148,20 +149,36 @@ class taskTray:
                                         # 'channel': 'dev',
                                         'icon_emoji': 'hamu2',
                                         'text': result,
-                                    }
+                                    },
+                                    timeout=1,
                                 )
                                 self.report_id = report_id
+                                self.url_reported = False
 
                             self.status = data
+                    break
             except requests.exceptions.Timeout:
-                logger.warning(f'Timeout {url} {t}')
+                logger.warning(f'Task Timeout {url} {t}')
             except Exception as e:
-                logger.warning(f'Exception {e} {url} {t}')
-            finally:
-                break
+                logger.warning(f'Task Exception {e} {url} {t}')
+
+    def doCheck(self):
+        if not self.url_reported and self.report_id:
+            # url contain report_id check
+            url = 'https://typhoon.yahoo.co.jp/weather/jp/earthquake/{self.report_id}.html'
+            print(f'doCheck {self.report_id} {url}')
+            try:
+                with requests.head(url, timeout=1) as r:
+                    logger.debug(f'Check {r.status_code} {url}')
+                    # TODO: push slack url
+            except requests.exceptions.Timeout:
+                logger.warning(f'Check Timeout {url}')
+            except Exception as e:
+                logger.warning(f'Check Exception {e} {url}')
 
     def runSchedule(self):
         schedule.every(INTERVAL).seconds.do(self.doTask)
+        schedule.every(INTERVAL).minutes.do(self.doCheck)
 
         while self.running:
             schedule.run_pending()
