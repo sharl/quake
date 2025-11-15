@@ -27,6 +27,7 @@ PreferredAppMode = {
 # https://github.com/moses-palmer/pystray/issues/130
 ctypes.windll['uxtheme.dll'][135](PreferredAppMode[dd.theme()])
 
+POST_URL = 'http://localhost:16543/chat_postMessage'
 
 # logger settings
 logging.basicConfig(
@@ -39,6 +40,14 @@ logging.basicConfig(
 )
 logger = logging.getLogger(TITLE)
 logger.setLevel(logging.DEBUG)
+
+
+def post(json, timeout=1):
+    requests.post(
+        POST_URL,
+        json=json,
+        timeout=timeout,
+    )
 
 
 class taskTray:
@@ -143,15 +152,10 @@ class taskTray:
                             # 指定された震度の場合のみ送信
                             report_id = data.get('report_id')
                             if self.quake_check[calcintensity] and self.report_id != report_id:
-                                requests.post(
-                                    'http://localhost:16543/chat_postMessage',
-                                    json={
-                                        # 'channel': 'dev',
-                                        'icon_emoji': 'hamu2',
-                                        'text': result,
-                                    },
-                                    timeout=1,
-                                )
+                                post({
+                                    'icon_emoji': 'hamu2',
+                                    'text': result,
+                                    })
                                 self.report_id = report_id
                                 self.url_reported = False
 
@@ -165,12 +169,17 @@ class taskTray:
     def doCheck(self):
         if not self.url_reported and self.report_id:
             # url contain report_id check
-            url = 'https://typhoon.yahoo.co.jp/weather/jp/earthquake/{self.report_id}.html'
+            url = f'https://typhoon.yahoo.co.jp/weather/jp/earthquake/{self.report_id}.html'
             print(f'doCheck {self.report_id} {url}')
             try:
                 with requests.head(url, timeout=1) as r:
                     logger.debug(f'Check {r.status_code} {url}')
-                    # TODO: push slack url
+                    if r.status_code == 200:
+                        post({
+                            'icon_emoji': 'hamu2',
+                            'text': url,
+                        })
+                        self.url_reported = True
             except requests.exceptions.Timeout:
                 logger.warning(f'Check Timeout {url}')
             except Exception as e:
