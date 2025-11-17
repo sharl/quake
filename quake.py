@@ -10,6 +10,7 @@ import time
 import webbrowser
 
 from PIL import Image
+from bs4 import BeautifulSoup as bs
 from pystray import Icon, Menu, MenuItem
 import darkdetect as dd
 import requests
@@ -58,6 +59,8 @@ class taskTray:
         # hamu report
         self.report_id = str()
         self.url_reported = False
+        # check yahoo info retry count
+        self.ycount = 0
         # quake class check: 0, 1, 2 is False
         self.quake_check = {i: (i not in ['0', '1', '2']) for i in QUAKE_CLASS}
 
@@ -69,6 +72,7 @@ class taskTray:
             MenuItem('Unset All', self.unsetAll),
             Menu.SEPARATOR,
         ]
+        # TODO: change toggle to slider
         for i in self.quake_check:
             item.append(MenuItem(i, self.toggle, checked=lambda x: self.quake_check[str(x)]))
         item.append(Menu.SEPARATOR)
@@ -155,7 +159,7 @@ class taskTray:
                                 post({
                                     'icon_emoji': 'hamu2',
                                     'text': result,
-                                    })
+                                })
                                 self.report_id = report_id
                                 self.url_reported = False
 
@@ -173,13 +177,22 @@ class taskTray:
             print(f'doCheck {self.report_id} {url}')
             try:
                 with requests.head(url, timeout=1) as r:
-                    logger.debug(f'Check {r.status_code} {url}')
                     if r.status_code == 200:
-                        post({
-                            'icon_emoji': 'hamu2',
-                            'text': url,
-                        })
-                        self.url_reported = True
+                        soup = bs(r.content, 'html.parser')
+                        meta = soup.find('meta', property='og:image')
+                        if meta:
+                            post({
+                                'text': '.',
+                                'image_url': meta.get('content'),
+                            })
+                            self.url_reported = True
+                            self.ycount = 0
+                    else:
+                        self.ycount += 1
+                if self.ycount >= 10:
+                    self.url_reported = True
+                logger.debug(f'Check {url} {self.url_reported} {self.ycount}')
+
             except requests.exceptions.Timeout:
                 logger.warning(f'Check Timeout {url}')
             except Exception as e:
