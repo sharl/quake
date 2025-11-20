@@ -11,6 +11,7 @@ import webbrowser
 
 from PIL import Image
 from bs4 import BeautifulSoup as bs
+from tenacity import retry, stop_after_attempt, RetryError
 from pystray import Icon, Menu, MenuItem
 import darkdetect as dd
 import requests
@@ -43,12 +44,14 @@ logger = logging.getLogger(TITLE)
 logger.setLevel(logging.DEBUG)
 
 
-def post(json, timeout=1):
+@retry(stop=stop_after_attempt(3))
+def post(json, timeout=10):
     requests.post(
         POST_URL,
         json=json,
         timeout=timeout,
     )
+    print('success')
 
 
 class taskTray:
@@ -62,6 +65,7 @@ class taskTray:
         # check yahoo info retry count
         self.ycount = 0
         # quake class check: 0, 1, 2 is False
+        # self.quake_check = {i: (i not in ['0']) for i in QUAKE_CLASS}
         self.quake_check = {i: (i not in ['0', '1', '2']) for i in QUAKE_CLASS}
 
         image = Image.open(io.BytesIO(binascii.unhexlify(ICON.replace('\n', '').strip())))
@@ -156,12 +160,17 @@ class taskTray:
                             # 指定された震度の場合のみ送信
                             report_id = data.get('report_id')
                             if self.quake_check[calcintensity] and self.report_id != report_id:
-                                post({
-                                    'icon_emoji': 'hamu2',
-                                    'text': result,
-                                })
-                                self.report_id = report_id
-                                self.url_reported = False
+                                try:
+                                    post({
+                                        'icon_emoji': 'hamu2',
+                                        'text': result,
+                                    })
+                                    self.report_id = report_id
+                                    self.url_reported = False
+                                except RetryError:
+                                    logger.warning(f'Task post error {url} {t}')
+                                except requests.exceptions.Timeout as e:
+                                    logger.warning(f'Check post Timeout {e} {url}')
 
                             self.status = data
                     break
@@ -174,29 +183,39 @@ class taskTray:
         if not self.url_reported and self.report_id:
             # url contain report_id check
             url = f'https://typhoon.yahoo.co.jp/weather/jp/earthquake/{self.report_id}.html'
-            print(f'doCheck {self.report_id} {url}')
+            # print(f'doCheck {self.report_id} {url}')
             try:
-                with requests.head(url, timeout=1) as r:
+                with requests.get(url, timeout=1) as r:
                     if r.status_code == 200:
                         soup = bs(r.content, 'html.parser')
                         meta = soup.find('meta', property='og:image')
                         if meta:
-                            post({
-                                'text': '.',
-                                'image_url': meta.get('content'),
-                            })
-                            self.url_reported = True
-                            self.ycount = 0
+                            img_url = meta.get('content')
+                            if img_url:
+                                try:
+                                    post({
+                                        'text': self.status.get('region_name'),
+                                        'image_url': img_url,
+                                    })
+                                    logger.debug(f'Check {url} Done {img_url}')
+                                    self.url_reported = True
+                                    self.ycount = 0
+                                except RetryError:
+                                    logger.warning(f'Check post retry error {img_url}')
+                                except requests.exceptions.Timeout as e:
+                                    logger.warning(f'Check post Timeout {e} {img_url}')
                     else:
                         self.ycount += 1
                 if self.ycount >= 10:
                     self.url_reported = True
-                logger.debug(f'Check {url} {self.url_reported} {self.ycount}')
+                    self.ycount = 0
 
-            except requests.exceptions.Timeout:
-                logger.warning(f'Check Timeout {url}')
+            except requests.exceptions.Timeout as e:
+                logger.warning(f'Check Timeout {e} {url}')
             except Exception as e:
                 logger.warning(f'Check Exception {e} {url}')
+
+            logger.debug(f'Check {url} {self.url_reported} {self.ycount}')
 
     def runSchedule(self):
         schedule.every(INTERVAL).seconds.do(self.doTask)
