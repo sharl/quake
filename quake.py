@@ -11,8 +11,8 @@ import webbrowser
 
 from PIL import Image
 from bs4 import BeautifulSoup as bs
-from tenacity import retry, stop_after_attempt, RetryError
 from pystray import Icon, Menu, MenuItem
+from tenacity import retry, wait_fixed, stop_after_attempt, RetryError
 import darkdetect as dd
 import requests
 import schedule
@@ -44,14 +44,13 @@ logger = logging.getLogger(TITLE)
 logger.setLevel(logging.DEBUG)
 
 
-@retry(stop=stop_after_attempt(3))
+@retry(wait=wait_fixed(1), stop=stop_after_attempt(10))
 def post(json, timeout=10):
     requests.post(
         POST_URL,
         json=json,
         timeout=timeout,
     )
-    print('success')
 
 
 class taskTray:
@@ -192,8 +191,12 @@ class taskTray:
                         if meta:
                             img_url = meta.get('content')
                             if img_url:
+                                if not img_url.startswith('https://weather-pctr.c.yimg.jp/t/weather-img/earthquake/'):
+                                    raise Exception('OGP not ready')
+
                                 try:
                                     post({
+                                        'icon_emoji': 'hamu2',
                                         'text': self.status.get('region_name'),
                                         'image_url': img_url,
                                     })
@@ -212,8 +215,10 @@ class taskTray:
 
             except requests.exceptions.Timeout as e:
                 logger.warning(f'Check Timeout {e} {url}')
+                self.ycount += 1
             except Exception as e:
                 logger.warning(f'Check Exception {e} {url}')
+                self.ycount += 1
 
             logger.debug(f'Check {url} {self.url_reported} {self.ycount}')
 
