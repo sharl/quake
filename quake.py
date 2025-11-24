@@ -7,6 +7,7 @@ import logging
 import logging.handlers
 import threading
 import time
+import wave
 import webbrowser
 
 from PIL import Image
@@ -14,6 +15,7 @@ from bs4 import BeautifulSoup as bs
 from pystray import Icon, Menu, MenuItem
 from tenacity import retry, wait_fixed, stop_after_attempt, RetryError
 import darkdetect as dd
+import pyaudio
 import requests
 import schedule
 
@@ -66,10 +68,17 @@ class taskTray:
         # quake class check: 0, 1, 2 is False
         # self.quake_check = {i: (i not in ['0']) for i in QUAKE_CLASS}
         self.quake_check = {i: (i not in ['0', '1', '2']) for i in QUAKE_CLASS}
+        self.sound = True
+
+        # Stream #0:0: Audio: pcm_s16le ([1][0][0][0] / 0x0001), 22050 Hz, 1 channels, s16, 352 kb/s
+        with wave.open('Assets/nc124106m.wav', 'rb') as wf:
+            self.alert_spund = wf.readframes(wf.getnframes())
 
         image = Image.open(io.BytesIO(binascii.unhexlify(ICON.replace('\n', '').strip())))
         item = [
             MenuItem(TITLE, self.doOpen, default=True),
+            Menu.SEPARATOR,
+            MenuItem('Sound', self.toggleSound, checked=lambda _: self.sound),
             Menu.SEPARATOR,
             MenuItem('Set All', self.setAll),
             MenuItem('Unset All', self.unsetAll),
@@ -82,6 +91,26 @@ class taskTray:
         item.append(MenuItem('Exit', self.stopApp))
         menu = Menu(*item)
         self.app = Icon(name=f'PYTHON.win32.{TITLE}', title=TITLE, icon=image, menu=menu)
+
+    def toggleSound(self, _, __):
+        self.sound = not self.sound
+        self.app.update_menu()
+
+    def doAlert(self):
+        if not self.sound:
+            return
+
+        pya = pyaudio.PyAudio()
+        stream = pya.open(
+            format=pyaudio.paInt16,         # 16bit
+            channels=1,                     # モノラル
+            rate=22050,
+            output=True,
+        )
+        stream.write(self.alert_sound)
+        stream.stop_stream()
+        stream.close()
+        pya.terminate()
 
     def doOpen(self):
         webbrowser.open(KMONI)
@@ -166,6 +195,8 @@ class taskTray:
                                     })
                                     self.report_id = report_id
                                     self.url_reported = False
+
+                                    self.doAlert()
                                 except RetryError:
                                     logger.warning(f'Task post error {url} {t}')
                                 except requests.exceptions.Timeout as e:
@@ -200,7 +231,7 @@ class taskTray:
                                         'text': self.status.get('region_name'),
                                         'image_url': img_url,
                                     })
-                                    logger.debug(f'Check {url} Done {img_url}')
+                                    logger.debug(f'Check Done {img_url}')
                                     self.url_reported = True
                                     self.ycount = 0
                                 except RetryError:
