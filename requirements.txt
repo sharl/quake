@@ -1,0 +1,8 @@
+bs4
+darkdetect
+pillow
+pyaudio
+pystray
+requests
+schedule
+tenacity
