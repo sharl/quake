@@ -234,7 +234,7 @@ class taskTray:
                                         'text': self.status.get('region_name'),
                                         'image_url': img_url,
                                     })
-                                    logger.debug(f'Check Done {img_url}')
+                                    logger.info(f'Check Done {img_url}')
                                     self.url_reported = True
                                     self.ycount = 0
                                 except RetryError:
