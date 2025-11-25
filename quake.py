@@ -62,6 +62,8 @@ class taskTray:
         self.status = {}
         # hamu report
         self.report_id = str()
+        # calculated intensity
+        self.calcintensity = str()
         self.url_reported = False
         # check yahoo info retry count
         self.ycount = 0
@@ -187,16 +189,17 @@ class taskTray:
                             # slackbot
                             # 指定された震度の場合のみ送信
                             report_id = data.get('report_id')
-                            if self.quake_check[calcintensity] and self.report_id != report_id:
+                            if self.quake_check[calcintensity] and self.calcintensity != calcintensity and self.report_id != report_id:
                                 try:
                                     post({
                                         'icon_emoji': 'hamu2',
                                         'text': result,
                                     })
+                                    if self.report_id != report_id:
+                                        self.doAlert()
                                     self.report_id = report_id
+                                    self.calcintensity = calcintensity
                                     self.url_reported = False
-
-                                    self.doAlert()
                                 except RetryError:
                                     logger.warning(f'Task post error {url} {t}')
                                 except requests.exceptions.Timeout as e:
