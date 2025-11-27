@@ -214,6 +214,20 @@ class taskTray:
 
     def doCheck(self):
         if not self.url_reported and self.report_id:
+            # 'int': intensity list が長さ1以上なら震度分布反映完了と思われる
+            try:
+                with requests.get('https://www.jma.go.jp/bosai/quake/data/list.json', timeout=1) as r:
+                    data = r.json()[0]
+                    eid = data['eid']
+                    intensities = data['int']
+                    logger.debug(f'report_id {self.report_id} eid {eid} ={self.report_id == eid} {intensities}')
+                    if not len(intensities):
+                        return
+            except Exception as e:
+                logger.debug(f'Check list Exception {e}')
+                self.ycount += 1
+                return
+
             # url contain report_id check
             url = f'https://typhoon.yahoo.co.jp/weather/jp/earthquake/{self.report_id}.html'
             # print(f'doCheck {self.report_id} {url}')
