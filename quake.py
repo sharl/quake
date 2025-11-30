@@ -76,6 +76,9 @@ class taskTray:
         # Stream #0:0: Audio: pcm_s16le ([1][0][0][0] / 0x0001), 22050 Hz, 1 channels, s16, 352 kb/s
         with wave.open('Assets/nc124106m.wav', 'rb') as wf:
             self.alert_sound = wf.readframes(wf.getnframes())
+            self.sample = wf.getsampwidth()
+            self.channels = wf.getnchannels()
+            self.rate = wf.getframerate()
 
         image = Image.open(io.BytesIO(binascii.unhexlify(ICON.replace('\n', '').strip())))
         item = [
@@ -105,9 +108,9 @@ class taskTray:
 
         pya = pyaudio.PyAudio()
         stream = pya.open(
-            format=pyaudio.paInt16,         # 16bit
-            channels=1,                     # モノラル
-            rate=22050,
+            format=pya.get_format_from_width(self.sample),
+            channels=self.channels,
+            rate=self.rate,
             output=True,
         )
         stream.write(self.alert_sound)
