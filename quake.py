@@ -22,6 +22,7 @@ import schedule
 TITLE = 'quake'
 INTERVAL = 1
 KMONI = 'http://www.kmoni.bosai.go.jp'
+YAHOO_LIST = 'https://typhoon.yahoo.co.jp/weather/jp/earthquake/list/'
 # https://www.jma.go.jp/jma/kishou/know/shindo/index.html
 QUAKE_CLASS = '0 1 2 3 4 5弱 5強 6弱 6強 7'.split()
 PreferredAppMode = {
@@ -115,7 +116,7 @@ class taskTray:
         pya.terminate()
 
     def doOpen(self):
-        webbrowser.open(KMONI)
+        webbrowser.open(YAHOO_LIST)
 
     def setAll(self):
         for i in self.quake_check:
