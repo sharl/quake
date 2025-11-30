@@ -221,7 +221,7 @@ class taskTray:
                     data = r.json()[0]
                     eid = data['eid']
                     intensities = data['int']
-                    logger.debug(f'report_id {self.report_id} eid {eid} ={self.report_id == eid} {intensities}')
+                    logger.debug(f'Check report_id {self.report_id} eid {eid} ={self.report_id == eid} {intensities}')
                     if not len(intensities):
                         return
             except Exception as e:
