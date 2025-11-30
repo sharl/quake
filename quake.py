@@ -215,14 +215,15 @@ class taskTray:
 
     def doCheck(self):
         if not self.url_reported and self.report_id:
-            # 'int': intensity list が長さ1以上なら震度分布反映完了と思われる
+            # 'ttl': '震源・震度情報' であれば反映完了と思われる
             try:
                 with requests.get('https://www.jma.go.jp/bosai/quake/data/list.json', timeout=1) as r:
                     data = r.json()[0]
                     eid = data['eid']
-                    intensities = data['int']
-                    logger.debug(f'Check report_id {self.report_id} eid {eid} ={self.report_id == eid} {intensities}')
-                    if not len(intensities):
+                    ttl = data['ttl']
+                    if self.report_id == eid:
+                        logger.debug(f'Check data {data}')
+                    if ttl != '震源・震度情報':
                         return
             except Exception as e:
                 logger.debug(f'Check list Exception {e}')
