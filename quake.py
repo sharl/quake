@@ -219,23 +219,30 @@ class taskTray:
     def doCheck(self):
         if not self.url_reported and self.report_id:
             # 'ttl': '震源・震度情報' であれば反映完了と思われる
+            eid = 'eid'
+            ttl = 'ttl'
             try:
-                with requests.get('https://www.jma.go.jp/bosai/quake/data/list.json', timeout=1) as r:
+                logger.debug('Check list start')
+                with requests.get('https://www.jma.go.jp/bosai/quake/data/list.json', timeout=3) as r:
                     data = r.json()[0]
+                    # logger.debug(f'Check data {data}')
                     eid = data['eid']
                     ttl = data['ttl']
-                    if self.report_id == eid:
-                        logger.debug(f'Check data {data}')
-                    if ttl != '震源・震度情報':
-                        return
             except Exception as e:
                 logger.debug(f'Check list Exception {e}')
-                self.ycount += 1
+
+            # logger.debug(f'Check self.report_id {self.report_id} {type(self.report_id)} eid {eid} {type(eid)} ttl {ttl}')
+
+            if self.report_id != eid:
+                logger.debug(f'Check eid {eid} failed')
+                return
+            if ttl != '震源・震度情報':
+                logger.debug(f'Check ttl {ttl} failed')
                 return
 
             # url contain report_id check
             url = f'https://typhoon.yahoo.co.jp/weather/jp/earthquake/{self.report_id}.html'
-            # print(f'doCheck {self.report_id} {url}')
+            # logger.debug(f'Check url {url}')
             try:
                 with requests.get(url, timeout=1) as r:
                     if r.status_code == 200:
