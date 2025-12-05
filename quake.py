@@ -222,7 +222,6 @@ class taskTray:
             eid = 'eid'
             ttl = 'ttl'
             try:
-                logger.debug('Check list start')
                 with requests.get('https://www.jma.go.jp/bosai/quake/data/list.json', timeout=3) as r:
                     data = r.json()[0]
                     # logger.debug(f'Check data {data}')
@@ -234,10 +233,10 @@ class taskTray:
             # logger.debug(f'Check self.report_id {self.report_id} {type(self.report_id)} eid {eid} {type(eid)} ttl {ttl}')
 
             if self.report_id != eid:
-                logger.debug(f'Check eid {eid} failed')
+                logger.debug(f'Check eid {eid} not match')
                 return
             if ttl != '震源・震度情報':
-                logger.debug(f'Check ttl {ttl} failed')
+                logger.debug(f'Check ttl {ttl} not match')
                 return
 
             # url contain report_id check
