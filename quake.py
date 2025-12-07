@@ -66,8 +66,8 @@ class taskTray:
         # calculated intensity
         self.calcintensity = str()
         self.url_reported = False
-        # check yahoo info retry count
-        self.ycount = 0
+        # check JMA list and yahoo info retry count
+        self.rcount = 0
         # quake class check: 0, 1, 2 is False
         # self.quake_check = {i: (i not in ['0']) for i in QUAKE_CLASS}
         self.quake_check = {i: (i not in ['0', '1', '2']) for i in QUAKE_CLASS}
@@ -232,11 +232,17 @@ class taskTray:
 
             # logger.debug(f'Check self.report_id {self.report_id} {type(self.report_id)} eid {eid} {type(eid)} ttl {ttl}')
 
+            if self.rcount >= 10:
+                self.url_reported = True
+                self.rcount = 0
+                return
             if self.report_id != eid:
                 logger.debug(f'Check eid {eid} not match')
+                self.rcount += 1
                 return
             if ttl != '震源・震度情報':
                 logger.debug(f'Check ttl {ttl} not match')
+                self.rcount += 1
                 return
 
             # url contain report_id check
@@ -261,25 +267,25 @@ class taskTray:
                                     })
                                     logger.info(f'Check Done {img_url}')
                                     self.url_reported = True
-                                    self.ycount = 0
+                                    self.rcount = 0
                                 except RetryError:
                                     logger.warning(f'Check post retry error {img_url}')
                                 except requests.exceptions.Timeout as e:
                                     logger.warning(f'Check post Timeout {e} {img_url}')
                     else:
-                        self.ycount += 1
-                if self.ycount >= 10:
+                        self.rcount += 1
+                if self.rcount >= 10:
                     self.url_reported = True
-                    self.ycount = 0
+                    self.rcount = 0
 
             except requests.exceptions.Timeout as e:
                 logger.warning(f'Check Timeout {e} {url}')
-                self.ycount += 1
+                self.rcount += 1
             except Exception as e:
                 logger.warning(f'Check Exception {e} {url}')
-                self.ycount += 1
+                self.rcount += 1
 
-            logger.debug(f'Check {url} {self.url_reported} {self.ycount}')
+            logger.debug(f'Check {url} {self.url_reported} {self.rcount}')
 
     def runSchedule(self):
         schedule.every(INTERVAL).seconds.do(self.doTask)
