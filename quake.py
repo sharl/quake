@@ -220,29 +220,21 @@ class taskTray:
     def doCheck(self):
         if not self.url_reported and self.report_id:
             # 'ttl': '震源・震度情報' であれば反映完了と思われる
-            eid = 'eid'
-            ttl = 'ttl'
+            icount = 0
             try:
                 with requests.get('https://www.jma.go.jp/bosai/quake/data/list.json', timeout=3) as r:
-                    data = r.json()[0]
-                    # logger.debug(f'Check data {data}')
-                    eid = data['eid']
-                    ttl = data['ttl']
+                    for j in r.json():
+                        if j.get('eid') == self.report_id and j.get('ttl') == '震源・震度情報':
+                            icount += 1
             except Exception as e:
                 logger.debug(f'Check list Exception {e}')
-
-            # logger.debug(f'Check self.report_id {self.report_id} {type(self.report_id)} eid {eid} {type(eid)} ttl {ttl}')
 
             if self.rcount >= RETRY_MAX:
                 self.url_reported = True
                 self.rcount = 0
                 return
-            if self.report_id != eid:
-                logger.debug(f'Check eid {eid} not match')
-                self.rcount += 1
-                return
-            if ttl != '震源・震度情報':
-                logger.debug(f'Check ttl {ttl} not match')
+            if not icount:
+                logger.debug(f'Check {self.report_id} information not ready {self.rcount}')
                 self.rcount += 1
                 return
 
