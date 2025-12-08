@@ -21,6 +21,7 @@ import schedule
 
 TITLE = 'quake'
 INTERVAL = 1
+RETRY_MAX = 15
 KMONI = 'http://www.kmoni.bosai.go.jp'
 YAHOO_LIST = 'https://typhoon.yahoo.co.jp/weather/jp/earthquake/list/'
 # https://www.jma.go.jp/jma/kishou/know/shindo/index.html
@@ -232,7 +233,7 @@ class taskTray:
 
             # logger.debug(f'Check self.report_id {self.report_id} {type(self.report_id)} eid {eid} {type(eid)} ttl {ttl}')
 
-            if self.rcount >= 10:
+            if self.rcount >= RETRY_MAX:
                 self.url_reported = True
                 self.rcount = 0
                 return
@@ -274,7 +275,7 @@ class taskTray:
                                     logger.warning(f'Check post Timeout {e} {img_url}')
                     else:
                         self.rcount += 1
-                if self.rcount >= 10:
+                if self.rcount >= RETRY_MAX:
                     self.url_reported = True
                     self.rcount = 0
 
