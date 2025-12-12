@@ -193,8 +193,7 @@ class taskTray:
                             # slackbot
                             # 指定された震度の場合のみ送信
                             report_id = data.get('report_id')
-                            print('quake_check', calcintensity, self.quake_check[calcintensity], self.calcintensity != calcintensity, self.report_id != report_id)
-                            if self.quake_check[calcintensity] and self.calcintensity != calcintensity and self.report_id != report_id:
+                            if self.quake_check[calcintensity] and self.calcintensity != calcintensity:
                                 print('try post')
                                 try:
                                     post({
