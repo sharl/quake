@@ -25,7 +25,7 @@ RETRY_MAX = 15
 KMONI = 'http://www.kmoni.bosai.go.jp'
 YAHOO_LIST = 'https://typhoon.yahoo.co.jp/weather/jp/earthquake/list/'
 # https://www.jma.go.jp/jma/kishou/know/shindo/index.html
-QUAKE_CLASS = '0 1 2 3 4 5弱 5強 6弱 6強 7'.split()
+QUAKE_CLASS = '1 2 3 4 5弱 5強 6弱 6強 7'.split()
 PreferredAppMode = {
     'Light': 0,
     'Dark': 1,
@@ -69,9 +69,8 @@ class taskTray:
         self.url_reported = False
         # check JMA list and yahoo info retry count
         self.rcount = 0
-        # quake class check: 0, 1, 2 is False
-        # self.quake_check = {i: (i not in ['0']) for i in QUAKE_CLASS}
-        self.quake_check = {i: (i not in ['0', '1', '2']) for i in QUAKE_CLASS}
+        # quake class check: 1, 2 is False
+        self.quake_check = {i: (i not in ['1', '2']) for i in QUAKE_CLASS}
         self.sound = True
 
         # Stream #0:0: Audio: pcm_s16le ([1][0][0][0] / 0x0001), 22050 Hz, 1 channels, s16, 352 kb/s
@@ -194,7 +193,9 @@ class taskTray:
                             # slackbot
                             # 指定された震度の場合のみ送信
                             report_id = data.get('report_id')
+                            print('quake_check', calcintensity, self.quake_check[calcintensity], self.calcintensity != calcintensity, self.report_id != report_id)
                             if self.quake_check[calcintensity] and self.calcintensity != calcintensity and self.report_id != report_id:
+                                print('try post')
                                 try:
                                     post({
                                         'icon_emoji': 'hamu2',
