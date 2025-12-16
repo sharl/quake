@@ -66,6 +66,7 @@ class taskTray:
         self.report_id = str()
         # calculated intensity
         self.calcintensity = str()
+        self.magunitude = str()
         self.url_reported = False
         # check JMA list and yahoo info retry count
         self.rcount = 0
@@ -176,11 +177,12 @@ class taskTray:
                         if self.status != data:
                             logger.debug(data)
                             calcintensity = data.get('calcintensity')
+                            magunitude = data.get('magunitude')
                             lines = [
                                 '【訓練】' if data.get('is_training') else '',
                                 data.get('report_time') + (' 最終報' if data.get('is_final') else f' 第{data.get("report_num")}報'),
                                 data.get('region_name'),
-                                f'M{data.get("magunitude")} 深さ {data.get("depth")}',
+                                f'M{magunitude} 深さ {data.get("depth")}',
                                 f'最大予測震度 {calcintensity}',
                             ]
                             self.app.title = '\n'.join(lines).strip()
@@ -193,7 +195,7 @@ class taskTray:
                             # slackbot
                             # 指定された震度の場合のみ送信
                             report_id = data.get('report_id')
-                            if self.quake_check[calcintensity] and self.calcintensity != calcintensity:
+                            if self.quake_check[calcintensity] and (self.calcintensity != calcintensity or self.magunitude != magunitude):
                                 print('try post')
                                 try:
                                     post({
@@ -204,6 +206,7 @@ class taskTray:
                                         self.doAlert()
                                     self.report_id = report_id
                                     self.calcintensity = calcintensity
+                                    self.magunitude = magunitude
                                     self.url_reported = False
                                 except RetryError:
                                     logger.warning(f'Task post error {url} {t}')
@@ -278,7 +281,7 @@ class taskTray:
                 logger.warning(f'Check Exception {e} {url}')
                 self.rcount += 1
 
-            logger.debug(f'Check {url} {self.url_reported} {self.rcount}')
+            # logger.debug(f'Check {url} {self.url_reported} {self.rcount}')
 
     def runSchedule(self):
         schedule.every(INTERVAL).seconds.do(self.doTask)
