@@ -23,6 +23,7 @@ TITLE = 'quake'
 INTERVAL = 1
 RETRY_MAX = 15
 KMONI = 'http://www.kmoni.bosai.go.jp'
+LMONI = 'https://www.lmoni.bosai.go.jp/monitor/'
 YAHOO_LIST = 'https://typhoon.yahoo.co.jp/weather/jp/earthquake/list/'
 # https://www.jma.go.jp/jma/kishou/know/shindo/index.html
 QUAKE_CLASS = '1 2 3 4 5弱 5強 6弱 6強 7'.split()
@@ -84,6 +85,7 @@ class taskTray:
         image = Image.open(io.BytesIO(binascii.unhexlify(ICON.replace('\n', '').strip())))
         item = [
             MenuItem(TITLE, self.doOpen, default=True),
+            MenuItem('LMONI', self.doOpenLMONI),
             Menu.SEPARATOR,
             MenuItem('Sound', self.toggleSound, checked=lambda _: self.sound),
             Menu.SEPARATOR,
@@ -121,6 +123,9 @@ class taskTray:
 
     def doOpen(self):
         webbrowser.open(YAHOO_LIST)
+
+    def doOpenLMONI(self):
+        webbrowser.open(LMONI)
 
     def setAll(self):
         for i in self.quake_check:
