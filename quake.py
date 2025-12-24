@@ -84,8 +84,8 @@ class taskTray:
 
         image = Image.open(io.BytesIO(binascii.unhexlify(ICON.replace('\n', '').strip())))
         item = [
-            MenuItem(TITLE, self.doOpen, default=True),
-            MenuItem('LMONI', self.doOpenLMONI),
+            MenuItem('LMONI', self.openLMONI, default=True),
+            MenuItem('List', self.openYahoo),
             Menu.SEPARATOR,
             MenuItem('Sound', self.toggleSound, checked=lambda _: self.sound),
             Menu.SEPARATOR,
@@ -121,11 +121,11 @@ class taskTray:
         stream.close()
         pya.terminate()
 
-    def doOpen(self):
-        webbrowser.open(YAHOO_LIST)
-
-    def doOpenLMONI(self):
+    def openLMONI(self):
         webbrowser.open(LMONI)
+
+    def openYahoo(self):
+        webbrowser.open(YAHOO_LIST)
 
     def setAll(self):
         for i in self.quake_check:
