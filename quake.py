@@ -43,7 +43,7 @@ logging.basicConfig(
         logging.handlers.RotatingFileHandler("log.log", encoding='utf-8', maxBytes=1000000, backupCount=0),
         logging.StreamHandler(),
     ],
-    datefmt='%x %X'
+    datefmt='%Y/%m/%d %X'
 )
 logger = logging.getLogger(TITLE)
 logger.setLevel(logging.DEBUG)
