@@ -273,6 +273,8 @@ class taskTray:
                                     logger.warning(f'Check post retry error {img_url}')
                                 except requests.exceptions.Timeout as e:
                                     logger.warning(f'Check post Timeout {e} {img_url}')
+                                except Exception as e:
+                                    logger.warning(f'Check post error {e} {img_url}')
                     else:
                         self.rcount += 1
                 if self.rcount >= RETRY_MAX:
