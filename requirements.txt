@@ -1,8 +1,13 @@
-bs4
+beautifulsoup4
+soupsieve
 darkdetect
 pillow
 pyaudio
 pystray
 requests
+certifi
+charset-normalizer
+idna
+urllib3
 schedule
 tenacity
