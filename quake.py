@@ -61,6 +61,9 @@ def post(json, timeout=10):
 class taskTray:
     def __init__(self):
         self.running = False
+        # session for KMONI
+        self.session = requests.Session()
+
         # quake status
         self.status = {}
         # hamu report
@@ -176,7 +179,7 @@ class taskTray:
             url = f'{KMONI}/webservice/hypo/eew/{now.strftime("%Y%m%d%H%M%S")}.json'
             try:
                 # print(f'try {url} {t}')
-                with requests.get(url, timeout=1) as r:
+                with self.session.get(url, timeout=1) as r:
                     data = r.json()
                     if data.get('report_time'):
                         if self.status != data:
