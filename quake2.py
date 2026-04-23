@@ -224,7 +224,6 @@ class taskTray:
         logger.info(f'check thread {eid} start')
 
         # 震源・震度情報が揃うまで待機
-        print('waiting for jma')
         found = False
         icount = 0
         while self.running:
@@ -235,7 +234,7 @@ class taskTray:
                 with requests.get('https://www.jma.go.jp/bosai/quake/data/list.json', timeout=3) as r:
                     for j in r.json():
                         if j.get('eid') == eid and j.get('ttl') == '震源・震度情報':
-                            logger.debug(f'Check list {eid} found')
+                            logger.info(f'Check list {eid} found')
                             found = True
                             icount = RETRY_MAX
                             break
@@ -252,10 +251,9 @@ class taskTray:
                 time.sleep(CHECK_INTERVAL - elapsed)
 
         if not found:
-            logger.debug(f'Check list {eid} {self.reports[eid]} not found')
+            logger.info(f'Check list {eid} {self.reports[eid]} not found')
             return
 
-        print('waiting for yahoo')
         rcount = 0
         while self.running:
             begin = time.time()
