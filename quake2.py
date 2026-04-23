@@ -216,7 +216,7 @@ class taskTray:
         """
         監視スレッド
         """
-        # self.doAlert()
+        self.doAlert()
 
         eid = threading.current_thread().name
         # url contain eid check
