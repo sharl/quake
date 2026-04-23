@@ -269,27 +269,20 @@ class taskTray:
                                 if not img_url.startswith('https://weather-pctr.c.yimg.jp/t/weather-img/earthquake/'):
                                     raise Exception('OGP not ready')
 
-                                logger.info(f'Check Done {self.reports[eid]['region_name']} {img_url}')
-
-                                # try:
-                                #     post({
-                                #         'icon_emoji': 'hamu2',
-                                #         'text': self.status.get('region_name'),
-                                #         'image_url': img_url,
-                                #     })
-                                #     logger.info(f'Check Done {img_url}')
-                                #     self.url_reported = True
-                                #     self.rcount = 0
-                                # except RetryError:
-                                #     logger.warning(f'Check post retry error {img_url}')
-                                # except requests.exceptions.Timeout as e:
-                                #     logger.warning(f'Check post Timeout {e} {img_url}')
-                                # except Exception as e:
-                                #     logger.warning(f'Check post error {e} {img_url}')
-
-                                return
-                                # rcount = RETRY_MAX
-                                # break
+                                try:
+                                    post({
+                                        'icon_emoji': 'hamu2',
+                                        'text': self.reports[eid]['region_name'],
+                                        'image_url': img_url,
+                                    })
+                                    logger.info(f'Check Done {self.reports[eid]['region_name']} {img_url}')
+                                    return
+                                except RetryError:
+                                    logger.warning(f'Check post retry error {img_url}')
+                                except requests.exceptions.Timeout as e:
+                                    logger.warning(f'Check post Timeout {e} {img_url}')
+                                except Exception as e:
+                                    logger.warning(f'Check post error {e} {img_url}')
                     else:
                         logger.warning(f'status code {r.status_code} {url}')
                         rcount += 1
