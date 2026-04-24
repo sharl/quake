@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from datetime import datetime, timedelta
+from datetime import datetime as dt
 import binascii
 import ctypes
 import io
@@ -12,15 +12,18 @@ import webbrowser
 
 from PIL import Image
 from bs4 import BeautifulSoup as bs
+from post import post
 from pystray import Icon, Menu, MenuItem
-from tenacity import retry, wait_fixed, stop_after_attempt, RetryError
+from tenacity import RetryError
 import darkdetect as dd
 import pyaudio
 import requests
-import schedule
+
+from utils import resource_path
 
 TITLE = 'quake'
 INTERVAL = 1
+CHECK_INTERVAL = 30
 RETRY_MAX = 15
 KMONI = 'http://www.kmoni.bosai.go.jp'
 LMONI = 'https://www.lmoni.bosai.go.jp/monitor/'
@@ -33,8 +36,6 @@ PreferredAppMode = {
 }
 # https://github.com/moses-palmer/pystray/issues/130
 ctypes.windll['uxtheme.dll'][135](PreferredAppMode[dd.theme()])
-
-POST_URL = 'http://localhost:16543/chat_postMessage'
 
 # logger settings
 logging.basicConfig(
@@ -49,31 +50,16 @@ logger = logging.getLogger(TITLE)
 logger.setLevel(logging.DEBUG)
 
 
-@retry(wait=wait_fixed(1), stop=stop_after_attempt(10))
-def post(json, timeout=10):
-    requests.post(
-        POST_URL,
-        json=json,
-        timeout=timeout,
-    )
-
-
 class taskTray:
     def __init__(self):
         self.running = False
         # session for KMONI
         self.session = requests.Session()
+        # 待機スレッド
+        self.threads = {}
+        # レポート初期化
+        self.reports = {}
 
-        # quake status
-        self.status = {}
-        # hamu report
-        self.report_id = str()
-        # calculated intensity
-        self.calcintensity = str()
-        self.magunitude = str()
-        self.url_reported = False
-        # check JMA list and yahoo info retry count
-        self.rcount = 0
         # quake class check: 1, 2 is False
         self.quake_check = {i: (i not in ['1', '2']) for i in QUAKE_CLASS}
         self.sound = True
@@ -145,113 +131,134 @@ class taskTray:
         self.quake_check[item] = not self.quake_check[item]
         self.app.update_menu()
 
-    def doTask(self):
-        # {
-        #   "result": {
-        #     "status": "success",
-        #     "message": "",
-        #     "is_auth": true
-        #   },
-        #   "report_time": "2025/10/24 09:27:52",
-        #   "region_code": "",
-        #   "request_time": "202510240927%s",
-        #   "region_name": "宮城県沖",
-        #   "longitude": "141.7",
-        #   "is_cancel": false,
-        #   "depth": "60km",
-        #   "calcintensity": "2",
-        #   "is_final": false,
-        #   "is_training": false,
-        #   "latitude": "38.2",
-        #   "origin_time": "20251024092714",
-        #   "security": {
-        #     "realm": "/kyoshin_monitor/static/jsondata/eew_est/",
-        #     "hash": "b61e4d95a8c42e004665825c098a6de4"
-        #   },
-        #   "magunitude": "3.5",
-        #   "report_num": "2",
-        #   "request_hypo_type": "eew",
-        #   "report_id": "20251024092722",
-        #   "alertflg": "予報"
-        # }
-        for t in range(0, 3):
-            now = datetime.now() - timedelta(seconds=t)
+    def doMonitor(self):
+        """
+        監視スレッド
+        """
+        while self.running:
+            # 受信開始
+            now = dt.now()
             url = f'{KMONI}/webservice/hypo/eew/{now.strftime("%Y%m%d%H%M%S")}.json'
+            begin = time.time()
+
             try:
-                # print(f'try {url} {t}')
                 with self.session.get(url, timeout=1) as r:
                     data = r.json()
                     if data.get('report_time'):
-                        if self.status != data:
-                            logger.debug(data)
-                            calcintensity = data.get('calcintensity')
-                            magunitude = data.get('magunitude')
-                            lines = [
-                                '【訓練】' if data.get('is_training') else '',
-                                data.get('report_time') + (' 最終報' if data.get('is_final') else f' 第{data.get("report_num")}報'),
-                                data.get('region_name'),
-                                f'M{magunitude} 深さ {data.get("depth")}',
-                                f'最大予測震度 {calcintensity}',
-                            ]
-                            self.app.title = '\n'.join(lines).strip()
-                            self.app.update_menu()
+                        # logger.debug(data)
+                        region_name = data.get('region_name')
+                        calcintensity = data.get('calcintensity')
+                        magunitude = data.get('magunitude')
+                        lines = [
+                            '【訓練】' if data.get('is_training') else '',
+                            data.get('report_time') + (' 最終報' if data.get('is_final') else f' 第{data.get("report_num")}報'),
+                            region_name,
+                            f'M{magunitude} 深さ {data.get("depth")}',
+                            f'最大予測震度 {calcintensity}',
+                        ]
+                        self.app.title = '\n'.join(lines).strip()
+                        self.app.update_menu()
 
-                            # result in one line
-                            result = ' '.join(lines).strip()
-                            logger.info(result)
+                        # 指定された震度の場合のみ監視開始
+                        report_id = data.get('report_id')
+                        if self.quake_check[calcintensity] and \
+                           (
+                               self.reports.get(report_id, {}).get('calcintensity') != calcintensity
+                               or
+                               self.reports.get(report_id, {}).get('magunitude') != magunitude
+                           ):
+                            if report_id not in self.threads:
+                                # 監視スレッドスタート
+                                self.threads[report_id] = threading.Thread(target=self.doCheck, name=report_id)
+                                self.threads[report_id].start()
 
-                            # slackbot
-                            # 指定された震度の場合のみ送信
-                            report_id = data.get('report_id')
-                            if self.quake_check[calcintensity] and (self.calcintensity != calcintensity or self.magunitude != magunitude):
-                                print('try post')
-                                try:
-                                    post({
-                                        'icon_emoji': 'hamu2',
-                                        'text': result,
-                                    })
-                                    if self.report_id != report_id:
-                                        self.doAlert()
-                                    self.report_id = report_id
-                                    self.calcintensity = calcintensity
-                                    self.magunitude = magunitude
-                                    self.url_reported = False
-                                except RetryError:
-                                    logger.warning(f'Task post error {url} {t}')
-                                except requests.exceptions.Timeout as e:
-                                    logger.warning(f'Check post Timeout {e} {url}')
-
-                            self.status = data
-                    break
+                            self.reports[report_id] = {
+                                'region_name': region_name,
+                                'calcintensity': calcintensity,
+                                'magunitude': magunitude,
+                            }
+                            try:
+                                result = ' '.join(lines).strip()
+                                post({
+                                    'icon_emoji': 'hamu2',
+                                    'text': result,
+                                })
+                                logger.info(result)
+                            except RetryError:
+                                logger.warning(f'Task post error {url}')
+                            except requests.exceptions.Timeout as e:
+                                logger.warning(f'Check post Timeout {e} {url}')
             except requests.exceptions.Timeout:
-                logger.warning(f'Task Timeout {url} {t}')
+                logger.warning(f'Task Timeout {url}')
             except Exception as e:
-                logger.warning(f'Task Exception {e} {url} {t}')
+                logger.warning(f'Task Exception {e} {url}')
+
+            # 待機スレッドが終了していたらスレッド・情報解放
+            ths = self.threads.copy()
+            if ths:
+                for eid in ths:
+                    th = self.threads[eid]
+                    if not th.is_alive():
+                        th.join()
+                        del self.threads[eid]
+                        del self.reports[eid]
+                        logger.info(f'Check thread {eid} Done')
+
+            # for th in threading.enumerate():
+            #     if th.name not in ['MainThread', 'Monitor']:
+            #         print('  ', th.name)
+
+            elapsed = time.time() - begin
+            # print(url, elapsed)
+            if elapsed < INTERVAL:
+                time.sleep(INTERVAL - elapsed)
 
     def doCheck(self):
-        if not self.url_reported and self.report_id:
+        """
+        監視スレッド
+        """
+        self.doAlert()
+
+        eid = threading.current_thread().name
+        # url contain eid check
+        url = f'https://typhoon.yahoo.co.jp/weather/jp/earthquake/{eid}.html'
+        logger.info(f'check thread {eid} start')
+
+        # 震源・震度情報が揃うまで待機
+        found = False
+        icount = 0
+        while self.running:
             # 'ttl': '震源・震度情報' であれば反映完了と思われる
-            icount = 0
+            begin = time.time()
+
             try:
                 with requests.get('https://www.jma.go.jp/bosai/quake/data/list.json', timeout=3) as r:
                     for j in r.json():
-                        if j.get('eid') == self.report_id and j.get('ttl') == '震源・震度情報':
-                            icount += 1
+                        if j.get('eid') == eid and j.get('ttl') == '震源・震度情報':
+                            logger.info(f'Check list {eid} found')
+                            found = True
+                            icount = RETRY_MAX
+                            break
+                icount += 1
             except Exception as e:
                 logger.debug(f'Check list Exception {e}')
 
-            if self.rcount >= RETRY_MAX:
-                self.url_reported = True
-                self.rcount = 0
-                return
-            if not icount:
-                logger.debug(f'Check {self.report_id} information not ready {self.rcount}')
-                self.rcount += 1
-                return
+            if icount >= RETRY_MAX:
+                break
 
-            # url contain report_id check
-            url = f'https://typhoon.yahoo.co.jp/weather/jp/earthquake/{self.report_id}.html'
-            # logger.debug(f'Check url {url}')
+            elapsed = time.time() - begin
+            # logger.debug(f'Check list {eid} {elapsed}')
+            if elapsed < CHECK_INTERVAL:
+                time.sleep(CHECK_INTERVAL - elapsed)
+
+        if not found:
+            logger.info(f'Check list {eid} {self.reports[eid]} not found')
+            return
+
+        rcount = 0
+        while self.running:
+            begin = time.time()
+
             try:
                 with requests.get(url, timeout=1) as r:
                     if r.status_code == 200:
@@ -266,12 +273,11 @@ class taskTray:
                                 try:
                                     post({
                                         'icon_emoji': 'hamu2',
-                                        'text': self.status.get('region_name'),
+                                        'text': self.reports[eid]['region_name'],
                                         'image_url': img_url,
                                     })
-                                    logger.info(f'Check Done {img_url}')
-                                    self.url_reported = True
-                                    self.rcount = 0
+                                    logger.info(f'Check Done {self.reports[eid]['region_name']} {img_url}')
+                                    return
                                 except RetryError:
                                     logger.warning(f'Check post retry error {img_url}')
                                 except requests.exceptions.Timeout as e:
@@ -279,27 +285,24 @@ class taskTray:
                                 except Exception as e:
                                     logger.warning(f'Check post error {e} {img_url}')
                     else:
-                        self.rcount += 1
-                if self.rcount >= RETRY_MAX:
-                    self.url_reported = True
-                    self.rcount = 0
-
+                        logger.warning(f'status code {r.status_code} {url}')
+                        rcount += 1
             except requests.exceptions.Timeout as e:
                 logger.warning(f'Check Timeout {e} {url}')
-                self.rcount += 1
+                rcount += 1
             except Exception as e:
                 logger.warning(f'Check Exception {e} {url}')
-                self.rcount += 1
+                rcount += 1
 
-            # logger.debug(f'Check {url} {self.url_reported} {self.rcount}')
+            if rcount >= RETRY_MAX:
+                break
 
-    def runSchedule(self):
-        schedule.every(INTERVAL).seconds.do(self.doTask)
-        schedule.every(INTERVAL).minutes.do(self.doCheck)
+            elapsed = time.time() - begin
+            # logger.debug(f'Check yahoo {url} {elapsed}')
+            if elapsed < CHECK_INTERVAL:
+                time.sleep(CHECK_INTERVAL - elapsed)
 
-        while self.running:
-            schedule.run_pending()
-            time.sleep(1)
+        logger.info(f'Check thread {eid} Finished')
 
     def stopApp(self):
         self.running = False
@@ -308,8 +311,8 @@ class taskTray:
     def runApp(self):
         self.running = True
 
-        task_thread = threading.Thread(target=self.runSchedule)
-        task_thread.start()
+        monitor_thread = threading.Thread(target=self.doMonitor, name='Monitor')
+        monitor_thread.start()
 
         self.app.run()
 
