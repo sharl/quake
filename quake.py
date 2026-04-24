@@ -53,8 +53,6 @@ logger.setLevel(logging.DEBUG)
 class taskTray:
     def __init__(self):
         self.running = False
-        # session for KMONI
-        self.session = requests.Session()
         # 待機スレッド
         self.threads = {}
         # レポート初期化
@@ -134,14 +132,17 @@ class taskTray:
         """
         監視スレッド
         """
+        # session for KMONI
+        session = requests.Session()
+
         while self.running:
             # 受信開始
-            now = dt.now()
-            url = f'{KMONI}/webservice/hypo/eew/{now.strftime("%Y%m%d%H%M%S")}.json'
+            now = dt.now().strftime("%Y%m%d%H%M%S")
+            url = f'{KMONI}/webservice/hypo/eew/{now}.json'
             begin = time.time()
 
             try:
-                with self.session.get(url, timeout=1) as r:
+                with session.get(url, timeout=1) as r:
                     data = r.json()
                     if data.get('report_time'):
                         # logger.debug(data)
@@ -183,13 +184,13 @@ class taskTray:
                                 })
                                 logger.info(result)
                             except RetryError:
-                                logger.warning(f'Task post error {url}')
+                                logger.warning(f'Task post error {now}')
                             except requests.exceptions.Timeout as e:
-                                logger.warning(f'Check post Timeout {e} {url}')
+                                logger.warning(f'Check post Timeout {e} {now}')
             except requests.exceptions.Timeout:
-                logger.warning(f'Task Timeout {url}')
+                logger.warning(f'Task Timeout {now}')
             except Exception as e:
-                logger.warning(f'Task Exception {e} {url}')
+                logger.warning(f'Task Exception {e} {now}')
 
             # 待機スレッドが終了していたらスレッド・情報解放
             ths = self.threads.copy()
@@ -217,9 +218,10 @@ class taskTray:
         """
         self.doAlert()
 
+        # session for jma, yahoo
+        session = requests.Session()
+
         eid = threading.current_thread().name
-        # url contain eid check
-        url = f'https://typhoon.yahoo.co.jp/weather/jp/earthquake/{eid}.html'
         logger.info(f'check thread {eid} start')
 
         # 震源・震度情報が揃うまで待機
@@ -230,7 +232,7 @@ class taskTray:
             begin = time.time()
 
             try:
-                with requests.get('https://www.jma.go.jp/bosai/quake/data/list.json', timeout=3) as r:
+                with session.get('https://www.jma.go.jp/bosai/quake/data/list.json', timeout=3) as r:
                     for j in r.json():
                         if j.get('eid') == eid and j.get('ttl') == '震源・震度情報':
                             logger.info(f'Check list {eid} found')
@@ -253,12 +255,15 @@ class taskTray:
             logger.info(f'Check list {eid} {self.reports[eid]} not found')
             return
 
+        # url contain eid check
+        url = f'https://typhoon.yahoo.co.jp/weather/jp/earthquake/{eid}.html'
+
         rcount = 0
         while self.running:
             begin = time.time()
 
             try:
-                with requests.get(url, timeout=1) as r:
+                with session.get(url, timeout=1) as r:
                     if r.status_code == 200:
                         soup = bs(r.content, 'html.parser')
                         meta = soup.find('meta', property='og:image')
