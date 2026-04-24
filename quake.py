@@ -64,8 +64,7 @@ class taskTray:
         self.quake_check = {i: (i not in ['1', '2']) for i in QUAKE_CLASS}
         self.sound = True
 
-        # Stream #0:0: Audio: pcm_s16le ([1][0][0][0] / 0x0001), 22050 Hz, 1 channels, s16, 352 kb/s
-        with wave.open('Assets/nc124106m.wav', 'rb') as wf:
+        with wave.open(resource_path('Assets/nc124106m.wav'), 'rb') as wf:
             self.alert_sound = wf.readframes(wf.getnframes())
             self.sample = wf.getsampwidth()
             self.channels = wf.getnchannels()
