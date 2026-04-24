@@ -179,7 +179,6 @@ class taskTray:
                             try:
                                 result = ' '.join(lines).strip()
                                 post({
-                                    'icon_emoji': 'hamu2',
                                     'text': result,
                                 })
                                 logger.info(result)
@@ -271,7 +270,6 @@ class taskTray:
 
                                 try:
                                     post({
-                                        'icon_emoji': 'hamu2',
                                         'text': self.reports[eid]['region_name'],
                                         'image_url': img_url,
                                     })
