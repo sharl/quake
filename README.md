@@ -7,6 +7,8 @@
 ```
 git clone https://github.com/sharl/quake.git
 cd quake
+python -m venv .venv
+. .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 cp post_template.py post.py
 python quake.py
@@ -17,4 +19,3 @@ python quake.py
 ニュース速報のアラーム - ニコニ・コモンズ  
 https://commons.nicovideo.jp/works/nc124106  
 をトリミングしたものを利用しています
-
