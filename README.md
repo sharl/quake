@@ -8,7 +8,7 @@
 git clone https://github.com/sharl/quake.git
 cd quake
 python -m venv .venv
-. .\.venv\Scripts\Activate.ps1
+.\.venv\Scripts\activate
 pip install -r requirements.txt
 cp post_template.py post.py
 python quake.py
