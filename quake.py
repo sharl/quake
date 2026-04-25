@@ -12,7 +12,11 @@ import webbrowser
 
 from PIL import Image
 from bs4 import BeautifulSoup as bs
-from post import post
+try:
+    from post import post
+except ModuleNotFoundError as e:
+    print(f'\033[33;1m{e}: post_template.py を参考に post.py を作成してください\033[m')
+    exit(1)
 from pystray import Icon, Menu, MenuItem
 from tenacity import RetryError
 import darkdetect as dd
