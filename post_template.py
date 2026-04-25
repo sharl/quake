@@ -13,8 +13,8 @@
 #     'image_url': 'https://weather-pctr.c.yimg.jp/t/weather-img/earthquake/20260420165303/f802614a_1776671880_point.png'
 # }
 #
-# のような固定フォーマット(text, image_url は変化します)で呼ばれるので
-# 連携する API に合わせて data を加工して、ファイル名を post.py として配置してください
+# 上記の固定フォーマットで本体から呼ばれるので、連携するサービスに合わせて利用してください
+# ファイル名を post.py として配置してください
 #
 def post(data):
     pass
