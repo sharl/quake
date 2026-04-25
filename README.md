@@ -14,7 +14,7 @@ python quake.py
 
 ## sound
 
-ニュース速報のアラーム - ニコニ・コモンズ
-https://commons.nicovideo.jp/works/nc124106
+ニュース速報のアラーム - ニコニ・コモンズ  
+https://commons.nicovideo.jp/works/nc124106  
 をトリミングしたものを利用しています
 
