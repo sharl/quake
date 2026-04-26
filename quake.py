@@ -279,8 +279,7 @@ class taskTray:
                 time.sleep(CHECK_INTERVAL - elapsed)
 
         if not found:
-            logger.info(f'Check list {eid} {self.reports[eid]} not found')
-            return
+            logger.warning(f'Check list {eid} {self.reports[eid]} not found')
 
         # url contain eid check
         url = f'https://typhoon.yahoo.co.jp/weather/jp/earthquake/{eid}.html'
