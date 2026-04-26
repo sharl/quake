@@ -151,6 +151,21 @@ class taskTray:
                     data = r.json()
                     if data.get('report_time'):
                         # logger.debug(data)
+                        # 使えそうなパラメータ
+                        # {
+                        #     'report_time': '2025/11/25 18:01:27',
+                        #     'report_id': '20251125180119',
+                        #     'origin_time': '20251125180116',
+                        #     'is_training': False,
+                        #     'report_num': '5',
+                        #     'is_final': False,
+                        #     'region_name': '熊本県阿蘇地方',
+                        #     'latitude': '33',
+                        #     'longitude': '131.1',
+                        #     'depth': '10km',
+                        #     'magunitude': '5.7',
+                        #     'calcintensity': '5強',
+                        # }
                         region_name = data.get('region_name')
                         calcintensity = data.get('calcintensity')
                         magunitude = data.get('magunitude')
