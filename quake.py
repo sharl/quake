@@ -134,11 +134,12 @@ class taskTray:
 
     def doMonitor(self):
         """
-        監視スレッド
+        待機スレッド
         """
         # session for KMONI
         session = requests.Session()
 
+        pre_result = None
         while self.running:
             # 受信開始
             now = dt.now().strftime("%Y%m%d%H%M%S")
@@ -146,7 +147,7 @@ class taskTray:
             begin = time.time()
 
             try:
-                with session.get(url, timeout=1) as r:
+                with session.get(url, timeout=INTERVAL - 0.1) as r:
                     data = r.json()
                     if data.get('report_time'):
                         # logger.debug(data)
@@ -163,10 +164,18 @@ class taskTray:
                         self.app.title = '\n'.join(lines).strip()
                         self.app.update_menu()
 
-                        # 指定された震度の場合のみ監視開始
                         report_id = data.get('report_id')
+                        result = ' '.join(lines).strip()
+
+                        if pre_result != result:
+                            logger.debug(result)
+                            pre_result = result
+
+                        # 指定された震度の場合のみ監視開始
                         if self.quake_check[calcintensity] and \
                            (
+                               self.reports.get(report_id, {}).get('region_name') != region_name
+                               or
                                self.reports.get(report_id, {}).get('calcintensity') != calcintensity
                                or
                                self.reports.get(report_id, {}).get('magunitude') != magunitude
@@ -182,7 +191,6 @@ class taskTray:
                                 'magunitude': magunitude,
                             }
                             try:
-                                result = ' '.join(lines).strip()
                                 post({
                                     'text': result,
                                 })
@@ -196,7 +204,7 @@ class taskTray:
             except Exception as e:
                 logger.warning(f'Task Exception {e} {now}')
 
-            # 待機スレッドが終了していたらスレッド・情報解放
+            # 監視スレッドが終了していたらスレッド・情報解放
             ths = self.threads.copy()
             if ths:
                 for eid in ths:
