@@ -28,7 +28,7 @@ from utils import resource_path
 TITLE = 'quake'
 INTERVAL = 1
 CHECK_INTERVAL = 30
-RETRY_MAX = 15
+RETRY_MAX = 30
 KMONI = 'http://www.kmoni.bosai.go.jp'
 LMONI = 'https://www.lmoni.bosai.go.jp/monitor/'
 YAHOO_LIST = 'https://typhoon.yahoo.co.jp/weather/jp/earthquake/list/'
