@@ -26,6 +26,7 @@ import requests
 from calc import calc
 from getLocation import getLocation, getNearWard
 from utils import resource_path
+from vvox import vvox
 
 TITLE = 'quake2'
 INTERVAL = 1
@@ -281,9 +282,11 @@ class taskTray:
         )
         dist, t, intensity = calc(self.location, eq_pos)
 
-        logger.debug(f'震源からの距離: {dist:.1f}km 予想震度 {intensity:.1f}')
+        logger.debug(f'震源からの距離: {dist:.1f}km 予想震度 {intensity:.4f}')
         if intensity > 1:
-            logger.debug(f"警告: {int(t)}秒後に到達します")
+            message = f'警告: {int(t)}秒後に到達します'
+            logger.debug(message)
+            vvox(message, speed=1.2, volume=3.0)
 
         # 震源・震度情報が揃うまで待機
         found = False
