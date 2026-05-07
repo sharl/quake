@@ -2,6 +2,13 @@
 
 緊急地震速報を音などでお知らせ
 
+通知機能をカスタマイズすることで様々なサービスに対応可能
+- Discord
+- Email
+- Slack
+- X (formerly known as Twitter)
+etc..
+
 ## Run
 
 ```powershell
