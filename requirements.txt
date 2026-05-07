@@ -10,3 +10,4 @@ requests
 soupsieve
 tenacity
 urllib3
+winsdk
