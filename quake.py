@@ -23,7 +23,10 @@ import darkdetect as dd
 import pyaudio
 import requests
 
+from calc import calc
+from getLocation import getLocation, getNearWard
 from utils import resource_path
+from vvox import vvox
 
 TITLE = 'quake'
 INTERVAL = 1
@@ -61,6 +64,9 @@ class taskTray:
         self.threads = {}
         # レポート初期化
         self.reports = {}
+        # 位置情報取得
+        self.location = getLocation()
+        self.ward = getNearWard(self.location)
 
         # quake class check: 1, 2 is False
         self.quake_check = {i: (i not in ['1', '2']) for i in QUAKE_CLASS}
@@ -78,6 +84,7 @@ class taskTray:
             MenuItem('List', self.openYahoo),
             Menu.SEPARATOR,
             MenuItem('Sound', self.toggleSound, checked=lambda _: self.sound),
+            MenuItem('Reposition', self.reposition),
             Menu.SEPARATOR,
             MenuItem('Set All', self.setAll),
             MenuItem('Unset All', self.unsetAll),
@@ -87,6 +94,7 @@ class taskTray:
         for i in self.quake_check:
             item.append(MenuItem(i, self.toggle, checked=lambda x: self.quake_check[str(x)]))
         item.append(Menu.SEPARATOR)
+        item.append(MenuItem(self.ward, lambda: False))
         item.append(MenuItem('Exit', self.stopApp))
         menu = Menu(*item)
         self.app = Icon(name=f'PYTHON.win32.{TITLE}', title=TITLE, icon=image, menu=menu)
@@ -94,6 +102,14 @@ class taskTray:
     def toggleSound(self, _, __):
         self.sound = not self.sound
         self.app.update_menu()
+
+    def reposition(self, _, __):
+        loc = getLocation()
+        if self.location != loc:
+            logger.info(f'repositioned {self.location} to {loc}')
+            self.location = loc
+            self.ward = getNearWard(self.location)
+            self.app.update_menu()
 
     def doAlert(self):
         if not self.sound:
@@ -168,16 +184,18 @@ class taskTray:
                         # }
                         region_name = data.get('region_name')
                         calcintensity = data.get('calcintensity')
+                        latitude = data.get('latitude')
+                        longitude = data.get('longitude')
+                        depth = data.get('depth')
                         magunitude = data.get('magunitude')
                         lines = [
                             '【訓練】' if data.get('is_training') else '',
                             data.get('report_time') + (' 最終報' if data.get('is_final') else f' 第{data.get("report_num")}報'),
                             region_name,
-                            f'M{magunitude} 深さ {data.get("depth")}',
+                            f'M{magunitude} 深さ {depth}',
                             f'最大予測震度 {calcintensity}',
                         ]
                         self.app.title = '\n'.join(lines).strip()
-                        self.app.update_menu()
 
                         report_id = data.get('report_id')
                         result = ' '.join(lines).strip()
@@ -193,18 +211,23 @@ class taskTray:
                                or
                                self.reports.get(report_id, {}).get('calcintensity') != calcintensity
                                or
+                               self.reports.get(report_id, {}).get('depth') != depth
+                               or
                                self.reports.get(report_id, {}).get('magunitude') != magunitude
                            ):
+                            self.reports[report_id] = {
+                                'region_name': region_name,
+                                'calcintensity': calcintensity,
+                                'latitude': latitude,
+                                'longitude': longitude,
+                                'depth': depth,
+                                'magunitude': magunitude,
+                            }
                             if report_id not in self.threads:
                                 # 監視スレッドスタート
                                 self.threads[report_id] = threading.Thread(target=self.doCheck, name=report_id)
                                 self.threads[report_id].start()
 
-                            self.reports[report_id] = {
-                                'region_name': region_name,
-                                'calcintensity': calcintensity,
-                                'magunitude': magunitude,
-                            }
                             try:
                                 post({
                                     'text': result,
@@ -230,12 +253,7 @@ class taskTray:
                         del self.reports[eid]
                         logger.info(f'Check thread {eid} Done')
 
-            # for th in threading.enumerate():
-            #     if th.name not in ['MainThread', 'Monitor']:
-            #         print('  ', th.name)
-
             elapsed = time.time() - begin
-            # print(url, elapsed)
             if elapsed < INTERVAL:
                 time.sleep(INTERVAL - elapsed)
 
@@ -250,6 +268,24 @@ class taskTray:
 
         eid = threading.current_thread().name
         logger.info(f'check thread {eid} start')
+
+        report = self.reports[eid]
+        logger.debug(self.location)
+        logger.debug(report)
+
+        eq_pos = (
+            float(report['latitude']),
+            float(report['longitude']),
+            int(report['depth'].removesuffix('km')),
+            float(report['magunitude'].removeprefix('M')),
+        )
+        dist, t, intensity = calc(self.location, eq_pos)
+
+        logger.debug(f'{dist=:.1f}km {t=:1f}s {intensity=:.4f}')
+        if intensity > 1:
+            message = f'警告: {int(t)}秒後に到達します'
+            logger.debug(message)
+            vvox(message, speed=1.2, volume=3.0)
 
         # 震源・震度情報が揃うまで待機
         found = False
