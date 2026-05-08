@@ -277,7 +277,7 @@ class taskTray:
             float(report['latitude']),
             float(report['longitude']),
             int(report['depth'].removesuffix('km')),
-            float(report['magunitude'].removeprefix('M')),
+            float(report['magunitude']),
         )
         dist, t, intensity = calc(self.location, eq_pos)
 
