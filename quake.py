@@ -281,7 +281,7 @@ class taskTray:
         )
         dist, t, intensity = calc(self.location, eq_pos)
 
-        logger.debug(f'{dist=:.1f}km {t=:1f}s {intensity=:.4f}')
+        logger.debug(f'{dist=:.1f}km {t=:.1f}s {intensity=:.4f}')
         if intensity > 1:
             message = f'警告: {int(t)}秒後に到達します'
             logger.debug(message)
