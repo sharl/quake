@@ -340,7 +340,7 @@ class taskTray:
                                         'text': self.reports[eid]['region_name'],
                                         'image_url': img_url,
                                     })
-                                    logger.info(f'Check Done {self.reports[eid]['region_name']} {img_url}')
+                                    logger.info(f'{self.reports[eid]['region_name']} {img_url}')
                                     return
                                 except RetryError:
                                     logger.warning(f'Check post retry error {img_url}')
