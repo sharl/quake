@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from datetime import datetime as dt
+from datetime import datetime as dt, timedelta as td
 import binascii
 import ctypes
 import io
@@ -79,12 +79,22 @@ class taskTray:
             self.rate = wf.getframerate()
 
         image = Image.open(io.BytesIO(binascii.unhexlify(ICON.replace('\n', '').strip())))
+        # 遅延受信サブメニュー設定
+        self.delay = 3
+        self.delay_menu = []
+        # TODO: change toggle to slider
+        for t in range(6):
+            self.delay_menu.append(
+                MenuItem(str(t), self.setDelay, checked=lambda item: str(self.delay) == str(item))
+            )
+        # メニュー設定
         item = [
             MenuItem('LMONI', self.openLMONI, default=True),
             MenuItem('List', self.openYahoo),
             Menu.SEPARATOR,
             MenuItem('Sound', self.toggleSound, checked=lambda _: self.sound),
             MenuItem('Reposition', self.reposition),
+            MenuItem('Delay', Menu(*self.delay_menu)),
             Menu.SEPARATOR,
             MenuItem('Set All', self.setAll),
             MenuItem('Unset All', self.unsetAll),
@@ -110,6 +120,10 @@ class taskTray:
             self.location = loc
             self.ward = getNearWard(self.location)
             self.app.update_menu()
+
+    def setDelay(self, _, item):
+        self.delay = int(str(item))
+        self.app.update_menu()
 
     def doAlert(self):
         if not self.sound:
@@ -158,7 +172,7 @@ class taskTray:
         pre_result = None
         while self.running:
             # 受信開始
-            now = dt.now().strftime("%Y%m%d%H%M%S")
+            now = (dt.now() - td(seconds=self.delay)).strftime('%Y%m%d%H%M%S')
             url = f'{KMONI}/webservice/hypo/eew/{now}.json'
             begin = time.time()
 
