@@ -87,25 +87,29 @@ class taskTray:
             self.delay_menu.append(
                 MenuItem(str(t), self.setDelay, checked=lambda item: str(self.delay) == str(item))
             )
-        # メニュー設定
-        item = [
-            MenuItem('LMONI', self.openLMONI, default=True),
-            MenuItem('List', self.openYahoo),
-            Menu.SEPARATOR,
-            MenuItem('Sound', self.toggleSound, checked=lambda _: self.sound),
-            MenuItem('Reposition', self.reposition),
-            MenuItem('Delay', Menu(*self.delay_menu)),
-            Menu.SEPARATOR,
+        # 検知震度サブメニュー設定
+        self.intensity_menu = [
             MenuItem('Set All', self.setAll),
             MenuItem('Unset All', self.unsetAll),
             Menu.SEPARATOR,
         ]
         # TODO: change toggle to slider
         for i in self.quake_check:
-            item.append(MenuItem(i, self.toggle, checked=lambda x: self.quake_check[str(x)]))
-        item.append(Menu.SEPARATOR)
-        item.append(MenuItem(self.ward, lambda: False))
-        item.append(MenuItem('Exit', self.stopApp))
+            self.intensity_menu.append(MenuItem(i, self.toggle, checked=lambda x: self.quake_check[str(x)]))
+        # メニュー設定
+        item = [
+            MenuItem(self.ward, lambda: False),
+            Menu.SEPARATOR,
+            MenuItem('LMONI', self.openLMONI, default=True),
+            MenuItem('List', self.openYahoo),
+            Menu.SEPARATOR,
+            MenuItem('Sound', self.toggleSound, checked=lambda _: self.sound),
+            MenuItem('Reposition', self.reposition),
+            MenuItem('Delay', Menu(*self.delay_menu)),
+            MenuItem('Intensity',  Menu(*self.intensity_menu)),
+            Menu.SEPARATOR,
+            MenuItem('Exit', self.stopApp),
+        ]
         menu = Menu(*item)
         self.app = Icon(name=f'PYTHON.win32.{TITLE}', title=TITLE, icon=image, menu=menu)
 
