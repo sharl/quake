@@ -2,6 +2,32 @@
 import math
 
 
+def getDepth(_cod):
+    # '+28.6+129.7+0/',      # ごく浅い
+    # '+38.4+141.9-60000/',  # 60km
+    # '+37.5+138.6/',        # 不明
+    # '',                    # 不明
+    # [+-]lat[+-]lng[+-]depth/   ISO6709
+    dep = ''
+    cod = _cod.removesuffix('/').split('+')
+    if len(cod) == 4:
+        _, _, _, dep = cod
+    elif len(cod) == 3:
+        _, _, ld = cod
+        if '-' in ld:
+            _, dep = ld.split('-')
+    if not dep:
+        dep = '不明'
+    else:
+        t = int(dep) // 1000
+        if t:
+            dep = f'{t}km'
+        else:
+            dep = 'ごく浅い'
+
+    return dep
+
+
 def calc(my_pos, eq_pos):
     """
     my_pos: (lat, lon)

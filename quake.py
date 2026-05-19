@@ -23,7 +23,7 @@ import darkdetect as dd
 import pyaudio
 import requests
 
-from calc import calc
+from calc import calc, getDepth
 from getLocation import getLocation, getNearWard
 from utils import resource_path
 from vvox import vvox
@@ -317,6 +317,18 @@ class taskTray:
                     for j in r.json():
                         if j.get('eid') == eid and j.get('ttl') == '震源・震度情報':
                             logger.debug(f'Check list {eid} Found')
+                            # 発表時点の震源地に修正
+                            if j['anm']:
+                                self.reports[eid]['region_name'] = j['anm']
+                            # 発表時点のマグニチュードに修正
+                            if j['mag']:
+                                self.reports[eid]['magunitude'] = j['mag']
+                            # 発表時点の震源深さに修正
+                            self.reports[eid]['depth'] = getDepth(j['cod'])
+                            # 発表時点の最大震度に修正
+                            if j['maxi']:
+                                self.reports[eid]['calcintensity'] = j['maxi']
+                            logger.debug(self.reports[eid])
                             found = True
                             icount = RETRY_MAX
                             break
@@ -354,12 +366,20 @@ class taskTray:
                                     raise Exception('OGP not ready')
 
                                 try:
+                                    et = dt.strptime(eid, '%Y%m%d%H%M%S').strftime('%Y/%m/%d %H:%M:%S')
+                                    lines = [
+                                        et,
+                                        f"{self.reports[eid]['region_name']}",
+                                        f"M{self.reports[eid]['magunitude']} 深さ {self.reports[eid]['depth']}",
+                                        f"最大震度 {self.reports[eid]['calcintensity']}",
+                                    ]
+                                    text = ' '.join(lines).strip()
+                                    self.app.title = '\n'.join(lines).strip()
                                     post({
-                                        'text': self.reports[eid]['region_name'],
+                                        'text': text,
                                         'image_url': img_url,
                                     })
-                                    et = dt.strptime(eid, '%Y%m%d%H%M%S').strftime('%Y/%m/%d %H:%M:%S')
-                                    logger.info(f'{et} {self.reports[eid]['region_name']} {img_url}')
+                                    logger.info(f'{text} {img_url}')
                                     return
                                 except RetryError:
                                     logger.warning(f'Check post retry error {img_url}')
