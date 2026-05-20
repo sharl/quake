@@ -327,7 +327,8 @@ class taskTray:
                             self.reports[eid]['depth'] = getDepth(j['cod'])
                             # 発表時点の最大震度に修正
                             if j['maxi']:
-                                self.reports[eid]['calcintensity'] = j['maxi']
+                                calcintensity = j['maxi'].replace('+', '強').replace('-', '弱')
+                                self.reports[eid]['calcintensity'] = calcintensity
                             logger.debug(self.reports[eid])
                             found = True
                             icount = RETRY_MAX
