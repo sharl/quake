@@ -59,7 +59,7 @@ logger.setLevel(logging.DEBUG)
 
 class taskTray:
     def __init__(self):
-        self.running = False
+        self.stop_event = threading.Event()
         # 待機スレッド
         self.threads = {}
         # レポート初期化
@@ -174,7 +174,7 @@ class taskTray:
         session = requests.Session()
 
         pre_result = None
-        while self.running:
+        while not self.stop_event.is_set():
             # 受信開始
             now = (dt.now() - td(seconds=self.delay)).strftime('%Y%m%d%H%M%S')
             url = f'{KMONI}/webservice/hypo/eew/{now}.json'
@@ -272,8 +272,9 @@ class taskTray:
                         logger.debug(f'Check thread {eid} Done')
 
             elapsed = time.time() - begin
-            if elapsed < INTERVAL:
-                time.sleep(INTERVAL - elapsed)
+            sleep_time = max(0, INTERVAL - elapsed)
+            if self.stop_event.wait(sleep_time):
+                break
 
     def doCheck(self):
         """
@@ -308,7 +309,7 @@ class taskTray:
         # 震源・震度情報が揃うまで待機
         found = False
         icount = 0
-        while self.running:
+        while not self.stop_event.is_set():
             # 'ttl': '震源・震度情報' であれば反映完了と思われる
             begin = time.time()
 
@@ -341,9 +342,9 @@ class taskTray:
                 break
 
             elapsed = time.time() - begin
-            # logger.debug(f'Check list {eid} {elapsed}')
-            if elapsed < CHECK_INTERVAL:
-                time.sleep(CHECK_INTERVAL - elapsed)
+            sleep_time = max(0, CHECK_INTERVAL - elapsed)
+            if self.stop_event.wait(sleep_time):
+                break
 
         if not found:
             logger.warning(f'Check list {eid} {self.reports[eid]} not found')
@@ -352,7 +353,7 @@ class taskTray:
         url = f'https://typhoon.yahoo.co.jp/weather/jp/earthquake/{eid}.html'
 
         rcount = 0
-        while self.running:
+        while not self.stop_event.is_set():
             begin = time.time()
 
             try:
@@ -402,18 +403,18 @@ class taskTray:
                 break
 
             elapsed = time.time() - begin
-            # logger.debug(f'Check yahoo {url} {elapsed}')
-            if elapsed < CHECK_INTERVAL:
-                time.sleep(CHECK_INTERVAL - elapsed)
+            sleep_time = max(0, CHECK_INTERVAL - elapsed)
+            if self.stop_event.wait(sleep_time):
+                break
 
         logger.debug(f'Check thread {eid} Finished')
 
     def stopApp(self):
-        self.running = False
+        self.stop_event.set()
         self.app.stop()
 
     def runApp(self):
-        self.running = True
+        self.stop_event.clear()
 
         monitor_thread = threading.Thread(target=self.doMonitor, name='Monitor')
         monitor_thread.start()
