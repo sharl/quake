@@ -3,6 +3,7 @@ certifi
 charset-normalizer
 darkdetect
 idna
+keyboard
 pillow
 pyaudio
 pystray

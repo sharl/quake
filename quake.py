@@ -20,6 +20,7 @@ except ModuleNotFoundError as e:
 from pystray import Icon, Menu, MenuItem
 from tenacity import RetryError
 import darkdetect as dd
+import keyboard
 import pyaudio
 import requests
 
@@ -146,7 +147,10 @@ class taskTray:
         pya.terminate()
 
     def openLMONI(self):
-        webbrowser.open(LMONI)
+        if not keyboard.is_pressed('shift'):
+            webbrowser.open(LMONI)
+        else:
+            self.openYahoo()
 
     def openYahoo(self):
         webbrowser.open(YAHOO_LIST)
