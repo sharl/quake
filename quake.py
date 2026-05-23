@@ -25,6 +25,7 @@ import pyaudio
 import requests
 
 from calc import calc, getDepth
+from getList import getList
 from getLocation import getLocation, getNearWard
 from utils import resource_path
 from vvox import vvox
@@ -311,6 +312,7 @@ class taskTray:
             vvox(message, speed=1.2, volume=3.0)
 
         # 震源・震度情報が揃うまで待機
+        gl = None
         found = False
         icount = 0
         while not self.stop_event.is_set():
@@ -318,26 +320,26 @@ class taskTray:
             begin = time.time()
 
             try:
-                with session.get('https://www.jma.go.jp/bosai/quake/data/list.json', timeout=3) as r:
-                    for j in r.json():
-                        if j.get('eid') == eid and j.get('ttl') == '震源・震度情報':
-                            logger.debug(f'Check list {eid} Found')
-                            # 発表時点の震源地に修正
-                            if j['anm']:
-                                self.reports[eid]['region_name'] = j['anm']
-                            # 発表時点のマグニチュードに修正
-                            if j['mag']:
-                                self.reports[eid]['magunitude'] = j['mag']
-                            # 発表時点の震源深さに修正
-                            self.reports[eid]['depth'] = getDepth(j['cod'])
-                            # 発表時点の最大震度に修正
-                            if j['maxi']:
-                                calcintensity = j['maxi'].replace('+', '強').replace('-', '弱')
-                                self.reports[eid]['calcintensity'] = calcintensity
-                            logger.debug(self.reports[eid])
-                            found = True
-                            icount = RETRY_MAX
-                            break
+                gl = getList(session)
+                data = gl.find(eid)
+                if data:
+                    logger.debug(f'Check list {eid} Found')
+                    # 発表時点の震源地に修正
+                    if data['anm']:
+                        self.reports[eid]['region_name'] = data['anm']
+                    # 発表時点のマグニチュードに修正
+                    if data['mag']:
+                        self.reports[eid]['magunitude'] = data['mag']
+                    # 発表時点の震源深さに修正
+                    self.reports[eid]['depth'] = getDepth(data['cod'])
+                    # 発表時点の最大震度に修正
+                    if data['maxi']:
+                        calcintensity = data['maxi'].replace('+', '強').replace('-', '弱')
+                        self.reports[eid]['calcintensity'] = calcintensity
+                    logger.debug(self.reports[eid])
+                    found = True
+                    icount = RETRY_MAX
+                    break
                 icount += 1
             except Exception as e:
                 logger.debug(f'Check list Exception {e}')
@@ -379,6 +381,8 @@ class taskTray:
                                         f"M{self.reports[eid]['magunitude']} 深さ {self.reports[eid]['depth']}",
                                         f"最大震度 {self.reports[eid]['calcintensity']}",
                                     ]
+                                    if gl:
+                                        lines.append(gl.get_maxi_cities(eid))
                                     text = ' '.join(lines).strip()
                                     self.app.title = '\n'.join(lines).strip()
                                     post({
