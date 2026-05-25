@@ -2,20 +2,6 @@
 import math
 
 
-def getDepth(cod):
-    # '+28.6+129.7+0/',      # ごく浅い
-    # '+38.4+141.9-60000/',  # 60km
-    # '+37.5+138.6/',        # 不明
-    # '',                    # 不明
-    # [+-]lat[+-]lng[+-]depth/   ISO6709
-    parts = cod.removesuffix('/').replace('-', '+').split('+')
-    if len(parts) < 4:
-        return '不明'
-
-    km = int(parts[3]) // 1000
-    return f'{km}km' if km > 0 else 'ごく浅い'
-
-
 def calc(my_pos, eq_pos):
     """
     my_pos: (lat, lon)
