@@ -324,19 +324,6 @@ class taskTray:
                 data = gl.find(eid)
                 if data:
                     logger.debug(f'Check list {eid} Found')
-                    # 発表時点の震源地に修正
-                    if data['anm']:
-                        self.reports[eid]['region_name'] = data['anm']
-                    # 発表時点のマグニチュードに修正
-                    if data['mag']:
-                        self.reports[eid]['magunitude'] = data['mag']
-                    # 発表時点の震源深さに修正
-                    self.reports[eid]['depth'] = gl.get_depth(data['cod'])
-                    # 発表時点の最大震度に修正
-                    if data['maxi']:
-                        calcintensity = data['maxi'].replace('+', '強').replace('-', '弱')
-                        self.reports[eid]['calcintensity'] = calcintensity
-                    logger.debug(self.reports[eid])
                     found = True
                     icount = RETRY_MAX
                     break
@@ -374,17 +361,8 @@ class taskTray:
                                     raise Exception('OGP not ready')
 
                                 try:
-                                    et = dt.strptime(eid, '%Y%m%d%H%M%S').strftime('%Y/%m/%d %H:%M:%S')
-                                    lines = [
-                                        et,
-                                        f"{self.reports[eid]['region_name']}",
-                                        f"M{self.reports[eid]['magunitude']} 深さ {self.reports[eid]['depth']}",
-                                        f"最大震度 {self.reports[eid]['calcintensity']}",
-                                    ]
-                                    if gl:
-                                        lines.append(gl.get_maxi_cities(eid))
-                                    text = ' '.join(lines).strip()
-                                    self.app.title = '\n'.join(lines).strip()
+                                    self.app.title = title = gl.get_title(eid)
+                                    text = title.replace('\n', ' ')
                                     post({
                                         'text': text,
                                         'image_url': img_url,
