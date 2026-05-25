@@ -24,7 +24,7 @@ import keyboard
 import pyaudio
 import requests
 
-from calc import calc, getDepth
+from calc import calc
 from getList import getList
 from getLocation import getLocation, getNearWard
 from utils import resource_path
@@ -113,7 +113,8 @@ class taskTray:
             MenuItem('Exit', self.stopApp),
         ]
         menu = Menu(*item)
-        self.app = Icon(name=f'PYTHON.win32.{TITLE}', title=TITLE, icon=image, menu=menu)
+        title = getList(requests.Session()).get_title(None)
+        self.app = Icon(name=f'PYTHON.win32.{TITLE}', title=title, icon=image, menu=menu)
 
     def toggleSound(self, _, __):
         self.sound = not self.sound
@@ -205,6 +206,7 @@ class taskTray:
                         #     'magunitude': '5.7',
                         #     'calcintensity': '5強',
                         # }
+                        report_id = data.get('report_id')
                         region_name = data.get('region_name')
                         calcintensity = data.get('calcintensity')
                         latitude = data.get('latitude')
@@ -219,8 +221,6 @@ class taskTray:
                             f'最大予測震度 {calcintensity}',
                         ]
                         self.app.title = '\n'.join(lines).strip()
-
-                        report_id = data.get('report_id')
                         result = ' '.join(lines).strip()
 
                         if pre_result != result:
@@ -331,7 +331,7 @@ class taskTray:
                     if data['mag']:
                         self.reports[eid]['magunitude'] = data['mag']
                     # 発表時点の震源深さに修正
-                    self.reports[eid]['depth'] = getDepth(data['cod'])
+                    self.reports[eid]['depth'] = gl.get_depth(data['cod'])
                     # 発表時点の最大震度に修正
                     if data['maxi']:
                         calcintensity = data['maxi'].replace('+', '強').replace('-', '弱')
