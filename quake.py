@@ -99,22 +99,24 @@ class taskTray:
         for i in self.quake_check:
             self.intensity_menu.append(MenuItem(i, self.toggle, checked=lambda x: self.quake_check[str(x)]))
         # メニュー設定
+        menu = self.update_menu()
+        title = getList(requests.Session()).get_title(None)
+        self.app = Icon(name=f'PYTHON.win32.{TITLE}', title=title, icon=image, menu=menu)
+
+    def update_menu(self):
         item = [
-            MenuItem(self.ward, lambda: False),
+            MenuItem(self.ward, self.reposition),
             Menu.SEPARATOR,
             MenuItem('LMONI', self.openLMONI, default=True),
             MenuItem('List', self.openYahoo),
             Menu.SEPARATOR,
             MenuItem('Sound', self.toggleSound, checked=lambda _: self.sound),
-            MenuItem('Reposition', self.reposition),
             MenuItem('Delay', Menu(*self.delay_menu)),
             MenuItem('Intensity',  Menu(*self.intensity_menu)),
             Menu.SEPARATOR,
             MenuItem('Exit', self.stopApp),
         ]
-        menu = Menu(*item)
-        title = getList(requests.Session()).get_title(None)
-        self.app = Icon(name=f'PYTHON.win32.{TITLE}', title=title, icon=image, menu=menu)
+        return Menu(*item)
 
     def toggleSound(self, _, __):
         self.sound = not self.sound
@@ -126,7 +128,7 @@ class taskTray:
             logger.info(f'repositioned {self.location} to {loc}')
             self.location = loc
             self.ward = getNearWard(self.location)
-            self.app.update_menu()
+            self.app.menu = self.update_menu()
 
     def setDelay(self, _, item):
         self.delay = int(str(item))
