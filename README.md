@@ -33,13 +33,14 @@ pyinstaller quake.py --clean --onefile --noconsole --icon .\Assets\catfish.ico -
 
 dist/ 配下に実行ファイルが生成されます
 
-## config
+## config, log
 
 ```
 ~\.config\quake\config.json
+~\.local\state\quake\log.log
 ```
 
-XDG_CONFIG_HOME に準拠しています
+XDG_CONFIG_HOME, XDG_STATE_HOME に準拠しています
 
 ## sound
 
