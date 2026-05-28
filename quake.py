@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from dataclasses import asdict, dataclass
 from datetime import datetime as dt, timedelta as td
 import binascii
 import ctypes
@@ -25,6 +26,7 @@ import pyaudio
 import requests
 
 from calc import calc
+from config import Config
 from getList import getList
 from getLocation import getLocation, getNearWard
 from utils import resource_path
@@ -59,9 +61,18 @@ logger = logging.getLogger(TITLE)
 logger.setLevel(logging.DEBUG)
 
 
+# 保存する設定の型定義
+@dataclass
+class Setting:
+    check: dict
+    sound: bool
+    delay: int
+
+
 class taskTray:
     def __init__(self):
         self.stop_event = threading.Event()
+        self.config = Config(TITLE)
         # 待機スレッド
         self.threads = {}
         # レポート初期化
@@ -98,10 +109,25 @@ class taskTray:
         # TODO: change toggle to slider
         for i in self.quake_check:
             self.intensity_menu.append(MenuItem(i, self.toggle, checked=lambda x: self.quake_check[str(x)]))
+        # 設定読み込み
+        self.load_config()
         # メニュー設定
         menu = self.update_menu()
         title = getList(requests.Session()).get_title(None)
         self.app = Icon(name=f'PYTHON.win32.{TITLE}', title=title, icon=image, menu=menu)
+
+    def load_config(self):
+        try:
+            setting = Setting(**self.config.load())
+            self.quake_check = setting.check
+            self.sound = setting.sound
+            self.delay = setting.delay
+        except TypeError:
+            pass
+
+    def save_config(self):
+        setting = Setting(check=self.quake_check, sound=self.sound, delay=self.delay)
+        self.config.save(asdict(setting))
 
     def update_menu(self):
         item = [
@@ -120,7 +146,7 @@ class taskTray:
 
     def toggleSound(self, _, __):
         self.sound = not self.sound
-        self.app.update_menu()
+        self.save_config()
 
     def reposition(self, _, __):
         loc = getLocation()
@@ -132,7 +158,7 @@ class taskTray:
 
     def setDelay(self, _, item):
         self.delay = int(str(item))
-        self.app.update_menu()
+        self.save_config()
 
     def doAlert(self):
         if not self.sound:
@@ -162,17 +188,17 @@ class taskTray:
     def setAll(self):
         for i in self.quake_check:
             self.quake_check[i] = True
-        self.app.update_menu()
+        self.save_config()
 
     def unsetAll(self):
         for i in self.quake_check:
             self.quake_check[i] = False
-        self.app.update_menu()
+        self.save_config()
 
     def toggle(self, _, _item):
         item = str(_item)
         self.quake_check[item] = not self.quake_check[item]
-        self.app.update_menu()
+        self.save_config()
 
     def doMonitor(self):
         """
