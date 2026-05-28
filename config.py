@@ -6,9 +6,8 @@ import sys
 
 
 class Config:
-    def __init__(self, APP_NAME):
-        # XDG_CONFIG_HOME
-        self.path = Path.home().joinpath('.config', APP_NAME, 'config.json')
+    def __init__(self, APP_NAME: Path, name: str = 'config.json'):
+        self.path = Path(os.environ.get('XDG_CONFIG_HOME', Path.home() / '.config') / APP_NAME / Path(name))
 
     def load(self) -> dict:
         try:
