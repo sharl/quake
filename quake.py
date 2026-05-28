@@ -225,6 +225,22 @@ class taskTray:
                         self.app.title = '\n'.join(lines).strip()
                         result = ' '.join(lines).strip()
 
+                        eq_pos = (
+                            float(latitude),
+                            float(longitude),
+                            int(depth.removesuffix('km')),
+                            float(magunitude),
+                        )
+                        dist, t, intensity = calc(self.location, eq_pos)
+                        if intensity > 1:
+                            # 予想到達時刻
+                            arrival_time = dt.strptime(report_id, '%Y%m%d%H%M%S') + td(seconds=t)
+                            delta = arrival_time.timestamp() - dt.now().timestamp()
+                            if delta >= 0 and (delta < 5 or int(delta) % 5 == 0):
+                                message = f'{report_id} 到達まであと {int(delta)} 秒'
+                                self.app.title = message
+                                logger.debug(message)
+
                         if pre_result != result:
                             logger.debug(result)
                             pre_result = result
