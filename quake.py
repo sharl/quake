@@ -29,6 +29,7 @@ from calc import calc
 from config import Config
 from getList import getList
 from getLocation import getLocation, getNearWard
+from getLog import getLog
 from utils import resource_path
 from vvox import vvox
 
@@ -49,10 +50,11 @@ PreferredAppMode = {
 ctypes.windll['uxtheme.dll'][135](PreferredAppMode[dd.theme()])
 
 # logger settings
+logname = getLog(TITLE, 'log.log')
 logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[
-        logging.handlers.RotatingFileHandler("log.log", encoding='utf-8', maxBytes=1000000, backupCount=0),
+        logging.handlers.RotatingFileHandler(logname, encoding='utf-8', maxBytes=1000000, backupCount=0),
         logging.StreamHandler(),
     ],
     datefmt='%Y/%m/%d %X'
