@@ -353,7 +353,10 @@ class taskTray:
 
         logger.debug(f'{dist=:.1f}km {t=:.1f}s {intensity=:.4f}')
         if intensity > 1:
-            message = f'警告: {int(t)}秒後に到達します'
+            # 予想到達時刻
+            arrival_time = dt.strptime(eid, '%Y%m%d%H%M%S') + td(seconds=t)
+            delta = arrival_time.timestamp() - dt.now().timestamp()
+            message = f'警告: {int(delta)}秒後に到達します'
             logger.debug(message)
             vvox(message, speed=1.2, volume=3.0)
 
