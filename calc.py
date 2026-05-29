@@ -3,7 +3,7 @@ from datetime import datetime as dt, timedelta as td
 import math
 
 
-def calc(my_pos, eq_pos):
+def calc(eid, my_pos, eq_pos):
     """
     my_pos: (lat, lon)
     eq_pos: (lat, lon, depth_km, magunitude)
@@ -24,13 +24,11 @@ def calc(my_pos, eq_pos):
     # 震源距離 (km) を算出
     dist = math.sqrt(horizontal_dist**2 + depth**2)
     # S波 3.5km/sと仮定
-    arrivalTime = dist / 3.5
+    seconds = dist / 3.5
     # 司・翠川式簡略版で現在地の予想震度を算出
     calcIntensity = 0.67 * magunitude - 1.83 * math.log10(max(dist, 1)) + 1.5
-
-    return dist, arrivalTime, calcIntensity
-
-
-def recalc_seconds(eid: str, seconds: float) -> float:
+    # 予想到着時刻と発生時刻の差
     arrival_time = dt.strptime(eid, '%Y%m%d%H%M%S') + td(seconds=seconds)
-    return arrival_time.timestamp() - dt.now().timestamp()
+    delta = arrival_time.timestamp() - dt.now().timestamp()
+
+    return dist, delta, calcIntensity
