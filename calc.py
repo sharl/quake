@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from datetime import datetime as dt, timedelta as td
 import math
 
 
@@ -28,3 +29,8 @@ def calc(my_pos, eq_pos):
     calcIntensity = 0.67 * magunitude - 1.83 * math.log10(max(dist, 1)) + 1.5
 
     return dist, arrivalTime, calcIntensity
+
+
+def recalc_seconds(eid: str, seconds: float) -> float:
+    arrival_time = dt.strptime(eid, '%Y%m%d%H%M%S') + td(seconds=seconds)
+    return arrival_time.timestamp() - dt.now().timestamp()

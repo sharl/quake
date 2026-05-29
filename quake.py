@@ -25,7 +25,7 @@ import keyboard
 import pyaudio
 import requests
 
-from calc import calc
+from calc import calc, recalc_seconds
 from config import Config
 from getList import getList
 from getLocation import getLocation, getNearWard
@@ -261,9 +261,7 @@ class taskTray:
                         )
                         dist, t, intensity = calc(self.location, eq_pos)
                         if intensity > 1:
-                            # 予想到達時刻
-                            arrival_time = dt.strptime(report_id, '%Y%m%d%H%M%S') + td(seconds=t)
-                            delta = arrival_time.timestamp() - dt.now().timestamp()
+                            delta = recalc_seconds(report_id, t)
                             if delta >= 0 and (delta < 5 or int(delta) % 5 == 0):
                                 message = f'{report_id} 到達まであと {int(delta)} 秒'
                                 self.app.title = message
@@ -353,9 +351,7 @@ class taskTray:
 
         logger.debug(f'{dist=:.1f}km {t=:.1f}s {intensity=:.4f}')
         if intensity > 1:
-            # 予想到達時刻
-            arrival_time = dt.strptime(eid, '%Y%m%d%H%M%S') + td(seconds=t)
-            delta = arrival_time.timestamp() - dt.now().timestamp()
+            delta = recalc_seconds(eid, t)
             message = f'警告: {int(delta)}秒後に到達します'
             logger.debug(message)
             vvox(message, speed=1.2, volume=3.0)
