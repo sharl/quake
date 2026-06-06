@@ -28,7 +28,7 @@ python quake.py
 
 ```powershell
 pip install pyinstaller
-pyinstaller quake.py --clean --onefile --noconsole --icon .\Assets\catfish.ico --add-data "Assets/nc124106m.wav;Assets"
+pyinstaller quake.py --clean --onefile --noconsole --icon=Assets\catfish.ico --add-data=Assets/nc124106m.wav;Assets
 ```
 
 dist/ 配下に実行ファイルが生成されます

@@ -5,10 +5,12 @@ darkdetect
 idna
 keyboard
 pillow
-pyaudio
+PyAudio
 pystray
 requests
+six
 soupsieve
 tenacity
+typing_extensions
 urllib3
 winsdk
