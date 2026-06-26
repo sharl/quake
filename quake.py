@@ -30,6 +30,7 @@ from config import Config
 from getList import getList
 from getLocation import getLocation, getNearWard
 from getLog import getLog
+from get_epicenter import get_epicenter
 from utils import resource_path
 from vvox import vvox
 
@@ -68,6 +69,7 @@ logger.setLevel(logging.DEBUG)
 class Setting:
     check: dict
     sound: bool
+    epicenter: bool
     delay: int
 
 
@@ -86,6 +88,7 @@ class taskTray:
         # quake class check: 1, 2 is False
         self.quake_check = {i: (i not in ['1', '2']) for i in QUAKE_CLASS}
         self.sound = True
+        self.epicenter = False
 
         with wave.open(resource_path('Assets/nc124106m.wav'), 'rb') as wf:
             self.alert_sound = wf.readframes(wf.getnframes())
@@ -107,6 +110,8 @@ class taskTray:
             MenuItem('Set All', self.setAll),
             MenuItem('Unset All', self.unsetAll),
             Menu.SEPARATOR,
+            MenuItem('Report Epicenter', self.toggleEpicenter, checked=lambda _: self.epicenter),
+            Menu.SEPARATOR,
         ]
         # TODO: change toggle to slider
         for i in self.quake_check:
@@ -124,11 +129,17 @@ class taskTray:
             self.quake_check = setting.check
             self.sound = setting.sound
             self.delay = setting.delay
+            self.epicenter = setting.epicenter
         except TypeError:
             pass
 
     def save_config(self):
-        setting = Setting(check=self.quake_check, sound=self.sound, delay=self.delay)
+        setting = Setting(
+            check=self.quake_check,
+            sound=self.sound,
+            epicenter=self.epicenter,
+            delay=self.delay
+        )
         self.config.save(asdict(setting))
 
     def update_menu(self):
@@ -148,6 +159,10 @@ class taskTray:
 
     def toggleSound(self, _, __):
         self.sound = not self.sound
+        self.save_config()
+
+    def toggleEpicenter(self, _, __):
+        self.epicenter = not self.epicenter
         self.save_config()
 
     def reposition(self, _, __):
@@ -294,6 +309,23 @@ class taskTray:
                                 self.threads[report_id] = threading.Thread(target=self.doCheck, name=report_id)
                                 self.threads[report_id].start()
 
+                                if self.epicenter:
+                                    # 震央取得
+                                    text, epi_url = get_epicenter(float(latitude), float(longitude))
+                                    if text:
+                                        data = {
+                                            'text': text
+                                        }
+                                        if epi_url:
+                                            data['image_url'] = epi_url
+                                        logger.debug(f'epicenter {text=} {epi_url=}')
+                                        try:
+                                            post(data)
+                                        except RetryError:
+                                            logger.warning(f'Task epicenter post error {now}')
+                                        except requests.exceptions.Timeout as e:
+                                            logger.warning(f'Task epicenter post Timeout {e} {now}')
+
                             try:
                                 post({
                                     'text': result,
@@ -302,7 +334,7 @@ class taskTray:
                             except RetryError:
                                 logger.warning(f'Task post error {now}')
                             except requests.exceptions.Timeout as e:
-                                logger.warning(f'Check post Timeout {e} {now}')
+                                logger.warning(f'Task post Timeout {e} {now}')
             except requests.exceptions.Timeout:
                 logger.warning(f'Task Timeout {now}')
             except Exception as e:

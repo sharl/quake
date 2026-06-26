@@ -1,0 +1,47 @@
+# -*- coding: utf-8 -*-
+from urllib.parse import quote
+import json
+import os
+
+import requests
+
+
+def get_epicenter(lat: float, lon: float) -> tuple[str, str]:
+    text = str()
+    url = str()
+
+    # get epicenter address
+    geocoding_url = f'https://geoapi.heartrails.com/api/json?method=searchByGeoLocation&x={lon}&y={lat}'
+    try:
+        with requests.get(geocoding_url, timeout=3) as r:
+            loc = r.json()['response']['location'][0]
+            text = f"{loc['prefecture']}{loc['city']}{loc['town']}"
+    except Exception:
+        pass
+
+    if not text:
+        return text, url
+
+    # get mapbox static image with point marker
+    access_token = os.environ.get('MAPBOX_ACCESS_TOKEN')
+    username = os.environ.get('MAPBOX_USERNAME')
+    style_id = os.environ.get('MAPBOX_STYLE_ID')
+    if access_token and username and style_id:
+        geodict = {
+            "type": "Point",
+            "coordinates": [lon, lat],
+        }
+        geojson_str = json.dumps(geodict, separators=(',', ':'))
+        overlay = quote(f'geojson({geojson_str})')
+
+        zoom = 10
+        bearing = 0
+        pitch = 0
+        width = 480
+        height = 480
+        attribution = 'false'
+        logo = 'false'
+
+        url = f'https://api.mapbox.com/styles/v1/{username}/{style_id}/static/{overlay}/{lon},{lat},{zoom},{bearing},{pitch}/{width}x{height}?access_token={access_token}&logo={logo}&attribution={attribution}'
+
+    return text, url
