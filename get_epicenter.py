@@ -42,6 +42,17 @@ def get_epicenter(lat: float, lon: float) -> tuple[str, str]:
         attribution = 'false'
         logo = 'false'
 
-        url = f'https://api.mapbox.com/styles/v1/{username}/{style_id}/static/{overlay}/{lon},{lat},{zoom},{bearing},{pitch}/{width}x{height}?access_token={access_token}&logo={logo}&attribution={attribution}'
+        center_and_view = f'{lon},{lat},{zoom},{bearing},{pitch}'
+        size = f'{width}x{height}'
+        query_params = (
+            f'access_token={access_token}'
+            f'&logo={logo}'
+            f'&attribution={attribution}'
+        )
+
+        url = (
+            f'https://api.mapbox.com/styles/v1/{username}/{style_id}/'
+            f'static/{overlay}/{center_and_view}/{size}?{query_params}'
+        )
 
     return text, url
