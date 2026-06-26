@@ -6,7 +6,14 @@ import os
 import requests
 
 
-def get_epicenter(lat: float, lon: float) -> tuple[str, str]:
+def get_epicenter(lat: float,
+                  lon: float,
+                  zoom: float = 10,
+                  bearing: float = 0,
+                  pitch: float = 0,
+                  width: int = 480,
+                  height: int = 480
+                  ) -> tuple[str, str]:
     text = str()
     url = str()
 
@@ -34,11 +41,6 @@ def get_epicenter(lat: float, lon: float) -> tuple[str, str]:
         geojson_str = json.dumps(geodict, separators=(',', ':'))
         overlay = quote(f'geojson({geojson_str})')
 
-        zoom = 10
-        bearing = 0
-        pitch = 0
-        width = 480
-        height = 480
         attribution = 'false'
         logo = 'false'
 
