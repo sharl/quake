@@ -312,19 +312,17 @@ class taskTray:
                                 if self.epicenter:
                                     # 震央取得
                                     text, epi_url = get_epicenter(float(latitude), float(longitude))
-                                    if text:
-                                        data = {
-                                            'text': text
-                                        }
-                                        if epi_url:
-                                            data['image_url'] = epi_url
-                                        logger.debug(f'epicenter {text=} {epi_url=}')
-                                        try:
-                                            post(data)
-                                        except RetryError:
-                                            logger.warning(f'Task epicenter post error {now}')
-                                        except requests.exceptions.Timeout as e:
-                                            logger.warning(f'Task epicenter post Timeout {e} {now}')
+                                    data = {
+                                        'text': text or region_name,
+                                        'image_url': epi_url,
+                                    }
+                                    logger.debug(f'epicenter {text=} {epi_url=}')
+                                    try:
+                                        post(data)
+                                    except RetryError:
+                                        logger.warning(f'Task epicenter post error {now}')
+                                    except requests.exceptions.Timeout as e:
+                                        logger.warning(f'Task epicenter post Timeout {e} {now}')
 
                             try:
                                 post({

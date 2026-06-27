@@ -26,8 +26,10 @@ def get_epicenter(lat: float,
     except Exception:
         pass
 
+    # 住所が取得できない場合は海上とみなして拡大率を下げる
+    # 拡大率は仮
     if not text:
-        return text, url
+        zoom = 4
 
     # get mapbox static image with point marker
     access_token = os.environ.get('MAPBOX_ACCESS_TOKEN')
