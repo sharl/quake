@@ -15,33 +15,23 @@ def get_mapbox_zoom(center_lat: float,
                     height: int = 480,
                     padding: int = 20,
                     ) -> float:
-    # 利用可能な実画面サイズ（余白を引く）
-    usable_w = width - (padding * 2)
-    usable_h = height - (padding * 2)
+    # ターゲットとの最大差分（中心固定なので2倍にする）
+    d_lat = abs(center_lat - ref_lat) * 2
+    d_lng = abs(center_lng - ref_lng) * 2
 
-    # Mapboxの標準タイルサイズ
-    TILE_SIZE = 512
+    if d_lat == 0 and d_lng == 0:
+        return 22.0
 
-    # メルカトル投影法（ズーム0）での座標変換
-    def lng_to_x(lng):
-        return (lng + 180.0) * (TILE_SIZE / 360.0)
+    # 北緯35度近辺での、ズーム0における1度あたりのピクセル数
+    # (360度で512px、かつ緯度方向はcos(35°)で反比例するのを考慮した実測係数)
+    px_per_deg_lng = 512 / 360  # 約 1.422
+    px_per_deg_lat = px_per_deg_lng / math.cos(math.radians(center_lat))
 
-    def lat_to_y(lat):
-        lat_rad = math.radians(lat)
-        return (TILE_SIZE / 2.0) - (TILE_SIZE / (2.0 * math.pi)) * math.log(math.tan(math.pi / 4.0 + lat_rad / 2.0))
+    # 各軸で必要なズームレベルを計算 (利用可能サイズ / (差分 * ズーム0でのpx数))
+    zoom_w = math.log2((width - padding * 2) / (d_lng * px_per_deg_lng))
+    zoom_h = math.log2((height - padding * 2) / (d_lat * px_per_deg_lat))
 
-    cx, cy = lng_to_x(center_lng), lat_to_y(center_lat)
-    rx, ry = lng_to_x(ref_lng), lat_to_y(ref_lat)
-
-    # 中心固定のため、片側の最大差分の「2倍」の幅が必要
-    dx_p0 = abs(cx - rx) * 2
-    dy_p0 = abs(cy - ry) * 2
-
-    # 512pxタイル基準でのズーム倍率計算
-    zoom_w = math.log2(usable_w / dx_p0) if dx_p0 > 0 else 22
-    zoom_h = math.log2(usable_h / dy_p0) if dy_p0 > 0 else 22
-
-    # 確実に収めるために、より引いた（小さい）ズームレベルを採用
+    # 確実に収めるために小さい方を採用
     return min(zoom_w, zoom_h)
 
 
@@ -100,8 +90,8 @@ def get_epicenter(lat: float,
             # 条件設定
             ref_lat, ref_lng = d[1]
             zoom = get_mapbox_zoom(lat, lon, ref_lat, ref_lng, width, height)
-            # 有効桁数..
-            zoom = int(100 * (zoom)) / 100
+            # URLを短くするために有効桁数調整
+            zoom = round(zoom, 2)
             print(d, zoom)
 
     # get mapbox static image with point marker
