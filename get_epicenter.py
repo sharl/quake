@@ -41,7 +41,8 @@ def get_epicenter(lat: float,
                   bearing: float = 0,
                   pitch: float = 0,
                   width: int = 480,
-                  height: int = 480
+                  height: int = 480,
+                  amedastable: dict = {},
                   ) -> tuple[str, str]:
     text = str()
     url = str()
@@ -58,41 +59,39 @@ def get_epicenter(lat: float,
     # 住所が取得できない場合は海上とみなして拡大率を下げる
     # 2026/07/02 近くのアメダス観測地点までの距離から拡大率を決定
     if not text:
-        amedastable = {}
-
-        url = 'https://www.jma.go.jp/bosai/amedas/const/amedastable.json'
-        try:
-            with requests.get(url, timeout=10) as r:
-                amedastable = r.json()
-        except Exception:
-            pass
+        if not amedastable:
+            url = 'https://www.jma.go.jp/bosai/amedas/const/amedastable.json'
+            try:
+                with requests.get(url, timeout=10) as r:
+                    amedastable.update(r.json())
+            except Exception:
+                pass
 
         def deg2dec(deg):
             degree, minute = deg
             return degree + minute / 60
 
-        if amedastable:
-            lines = []
-            data = amedastable
-            for key in data:
-                name = data[key]['kjName']
-                elem = data[key]['elems']
-                _lat = deg2dec(data[key]['lat'])
-                _lng = deg2dec(data[key]['lon'])
-                dist = math.dist((lat, lon), (_lat, _lng))
-                # 気温 降水量 風向 風速 日照時間 積雪深 湿度 気圧
-                if elem.startswith('11111'):
-                    lines.append([name, (_lat, _lng), dist])
+        lines = []
+        data = amedastable
+        for key in data:
+            name = data[key]['kjName']
+            elem = data[key]['elems']
+            _lat = deg2dec(data[key]['lat'])
+            _lng = deg2dec(data[key]['lon'])
+            dist = math.dist((lat, lon), (_lat, _lng))
+            # 気温 降水量 風向 風速 日照時間 積雪深 湿度 気圧
+            if elem.startswith('1111'):
+                lines.append([name, (_lat, _lng), dist])
 
-            # 情報量を増やすため少し離れた観測地点をターゲットに
-            d = sorted(lines, key=lambda x: x[2])[3]
+        # 情報量を増やすため少し離れた観測地点をターゲットに
+        d = sorted(lines, key=lambda x: x[2])[3]
 
-            # 条件設定
-            ref_lat, ref_lng = d[1]
-            zoom = get_mapbox_zoom(lat, lon, ref_lat, ref_lng, width, height)
-            # URLを短くするために有効桁数調整
-            zoom = round(zoom, 2)
-            print(d, zoom)
+        # 条件設定
+        ref_lat, ref_lng = d[1]
+        zoom = get_mapbox_zoom(lat, lon, ref_lat, ref_lng, width, height)
+        # URLを短くするために有効桁数調整
+        zoom = round(zoom, 2)
+        print(d, zoom)
 
     # get mapbox static image with point marker
     access_token = os.environ.get('MAPBOX_ACCESS_TOKEN')
