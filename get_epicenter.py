@@ -80,7 +80,7 @@ def get_epicenter(lat: float,
             _lng = deg2dec(data[key]['lon'])
             dist = math.dist((lat, lon), (_lat, _lng))
             # 気温 降水量 風向 風速 日照時間 積雪深 湿度 気圧
-            if elem.startswith('1111'):
+            if elem.startswith('11111'):
                 lines.append([name, (_lat, _lng), dist])
 
         # 情報量を増やすため少し離れた観測地点をターゲットに
