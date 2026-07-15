@@ -232,7 +232,7 @@ class taskTray:
             begin = time.time()
 
             try:
-                with session.get(url, timeout=INTERVAL - 0.05) as r:
+                with session.get(url, timeout=(0.1, INTERVAL - 0.05)) as r:
                     data = r.json()
                     if data.get('report_time'):
                         # logger.debug(data)
@@ -333,6 +333,10 @@ class taskTray:
                                 logger.warning(f'Task post error {now}')
                             except requests.exceptions.Timeout as e:
                                 logger.warning(f'Task post Timeout {e} {now}')
+            except requests.exceptions.ConnectTimeout:
+                logger.warning(f'Task Connect Timeout {now}')
+            except requests.exceptions.ReadTimeout:
+                logger.warning(f'Task Read Timeout {now}')
             except requests.exceptions.Timeout:
                 logger.warning(f'Task Timeout {now}')
             except Exception as e:
