@@ -347,7 +347,7 @@ class taskTray:
                 connect_timeout = min(connect_timeout + TIMEOUT_STEP, MAX_CONNECT_TIMEOUT)
                 warn += 1
             except requests.exceptions.ReadTimeout:
-                logger.warning(f'Task Read Timeout {now}+ {time.time() - begin:.3f}')
+                logger.warning(f'Task Read Timeout {now} {read_timeout}+ {time.time() - begin:.3f}')
                 read_timeout = min(read_timeout + TIMEOUT_STEP, MAX_READ_TIMEOUT)
                 warn += 1
             except requests.exceptions.Timeout:
