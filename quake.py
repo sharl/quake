@@ -36,10 +36,10 @@ from vvox import vvox
 
 TITLE = 'quake'
 INTERVAL = 1
-CONNECT_TIMEOUT = 0.1
-MAX_CONNECT_TIMEOUT = 0.5
-READ_TIMEOUT = 0.1
-MAX_READ_TIMEOUT = INTERVAL - 0.05
+CONNECT_TIMEOUT = 0.5
+MAX_CONNECT_TIMEOUT = 0.9       # < INTERVAL
+READ_TIMEOUT = 0.5
+MAX_READ_TIMEOUT = 0.9          # < INTERVAL
 TIMEOUT_STEP = 0.01
 
 CHECK_INTERVAL = 30
@@ -350,8 +350,6 @@ class taskTray:
                 logger.warning(f'Task Read Timeout {now} {read_timeout}+ {time.time() - begin:.3f}')
                 read_timeout = min(read_timeout + TIMEOUT_STEP, MAX_READ_TIMEOUT)
                 warn += 1
-            except requests.exceptions.Timeout:
-                logger.warning(f'Task Timeout {now} {time.time() - begin:.3f}')
             except Exception as e:
                 logger.warning(f'Task Exception {e} {now}')
 
@@ -366,10 +364,10 @@ class taskTray:
                         del self.reports[eid]
                         logger.debug(f'Check thread {eid} Done')
 
-            elapsed = time.time() - begin
             if warn:
                 connect_timeout = round(connect_timeout, 3)
                 read_timeout = round(read_timeout, 3)
+            elapsed = time.time() - begin
             sleep_time = max(0, INTERVAL - elapsed)
             if self.stop_event.wait(sleep_time):
                 break
