@@ -232,7 +232,7 @@ class taskTray:
             begin = time.time()
 
             try:
-                with session.get(url, timeout=INTERVAL - 0.1) as r:
+                with session.get(url, timeout=INTERVAL - 0.05) as r:
                     data = r.json()
                     if data.get('report_time'):
                         # logger.debug(data)
