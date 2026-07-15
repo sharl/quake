@@ -343,11 +343,11 @@ class taskTray:
                             except requests.exceptions.Timeout as e:
                                 logger.warning(f'Task post Timeout {e} {now}')
             except requests.exceptions.ConnectTimeout:
-                logger.warning(f'Task Connect Timeout {now} {connect_timeout} {time.time() - begin:.3f}')
+                logger.warning(f'Task Connect Timeout {now} {connect_timeout}+ {time.time() - begin:.3f}')
                 connect_timeout = min(connect_timeout + TIMEOUT_STEP, MAX_CONNECT_TIMEOUT)
                 warn += 1
             except requests.exceptions.ReadTimeout:
-                logger.warning(f'Task Read Timeout {now} {time.time() - begin:.3f}')
+                logger.warning(f'Task Read Timeout {now}+ {time.time() - begin:.3f}')
                 read_timeout = min(read_timeout + TIMEOUT_STEP, MAX_READ_TIMEOUT)
                 warn += 1
             except requests.exceptions.Timeout:
@@ -368,7 +368,8 @@ class taskTray:
 
             elapsed = time.time() - begin
             if warn:
-                print(f'  {elapsed=:.3f} {connect_timeout=} {read_timeout=}')
+                connect_timeout = round(connect_timeout, 3)
+                read_timeout = round(read_timeout, 3)
             sleep_time = max(0, INTERVAL - elapsed)
             if self.stop_event.wait(sleep_time):
                 break
