@@ -36,12 +36,7 @@ from vvox import vvox
 
 TITLE = 'quake'
 INTERVAL = 1
-CONNECT_TIMEOUT = 0.5
-MAX_CONNECT_TIMEOUT = 2
-READ_TIMEOUT = 0.5
-MAX_READ_TIMEOUT = 2
-TIMEOUT_STEP = 0.01
-
+TIMEOUT = 2
 CHECK_INTERVAL = 30
 RETRY_MAX = 30
 KMONI = 'http://www.kmoni.bosai.go.jp'
@@ -229,19 +224,16 @@ class taskTray:
         """
         # session for KMONI
         session = requests.Session()
-        connect_timeout = CONNECT_TIMEOUT
-        read_timeout = READ_TIMEOUT
 
         pre_result = None
         while not self.stop_event.is_set():
             # 受信開始
             now = (dt.now() - td(seconds=self.delay)).strftime('%Y%m%d%H%M%S')
             url = f'{KMONI}/webservice/hypo/eew/{now}.json'
-            warn = 0
             begin = time.time()
 
             try:
-                with session.get(url, timeout=(connect_timeout, read_timeout)) as r:
+                with session.get(url, timeout=TIMEOUT) as r:
                     data = r.json()
                     if data.get('report_time'):
                         # logger.debug(data)
@@ -342,14 +334,8 @@ class taskTray:
                                 logger.warning(f'Task post error {now}')
                             except requests.exceptions.Timeout as e:
                                 logger.warning(f'Task post Timeout {e} {now}')
-            except requests.exceptions.ConnectTimeout:
-                logger.warning(f'Task Connect Timeout {now} {connect_timeout}+ {time.time() - begin:.3f}')
-                connect_timeout = min(connect_timeout + TIMEOUT_STEP, MAX_CONNECT_TIMEOUT)
-                warn += 1
-            except requests.exceptions.ReadTimeout:
-                logger.warning(f'Task Read Timeout {now} {read_timeout}+ {time.time() - begin:.3f}')
-                read_timeout = min(read_timeout + TIMEOUT_STEP, MAX_READ_TIMEOUT)
-                warn += 1
+            except requests.exceptions.Timeout:
+                pass
             except Exception as e:
                 logger.warning(f'Task Exception {e} {now}')
 
@@ -364,9 +350,6 @@ class taskTray:
                         del self.reports[eid]
                         logger.debug(f'Check thread {eid} Done')
 
-            if warn:
-                connect_timeout = round(connect_timeout, 3)
-                read_timeout = round(read_timeout, 3)
             elapsed = time.time() - begin
             sleep_time = max(0, INTERVAL - elapsed)
             if self.stop_event.wait(sleep_time):
