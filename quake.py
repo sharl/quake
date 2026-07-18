@@ -21,7 +21,6 @@ except ModuleNotFoundError as e:
 from pystray import Icon, Menu, MenuItem
 from tenacity import RetryError
 import darkdetect as dd
-import keyboard
 import pyaudio
 import requests
 
@@ -77,6 +76,7 @@ class Setting:
 class taskTray:
     def __init__(self):
         self.stop_event = threading.Event()
+        self.progress = False
         self.config = Config(TITLE)
         # 待機スレッド
         self.threads = {}
@@ -140,10 +140,12 @@ class taskTray:
             if self.quake_check[i]:
                 break
         item = [
+            MenuItem('default', self.doIt, default=True, visible=False),
+
             MenuItem(self.ward, self.reposition),
             Menu.SEPARATOR,
-            MenuItem('LMONI', self.openLMONI, default=True),
-            MenuItem('List', self.openYahoo),
+            MenuItem('長周期地震動モニタ', self.openLMONI),
+            MenuItem('地震の履歴一覧', self.openYahoo),
             Menu.SEPARATOR,
             MenuItem('Sound', self.toggleSound, checked=lambda _: self.sound),
             MenuItem('Report Epicenter', self.toggleEpicenter, checked=lambda _: self.epicenter),
@@ -154,6 +156,13 @@ class taskTray:
         ]
         return Menu(*item)
 
+    def doIt(self):
+        if self.progress:
+            url = LMONI
+        else:
+            url = YAHOO_LIST
+        webbrowser.open(url)
+
     def reposition(self, _, __):
         loc = getLocation()
         if self.location != loc:
@@ -163,10 +172,7 @@ class taskTray:
             self.app.menu = self.update_menu()
 
     def openLMONI(self):
-        if not keyboard.is_pressed('shift'):
-            webbrowser.open(LMONI)
-        else:
-            self.openYahoo()
+        webbrowser.open(LMONI)
 
     def openYahoo(self):
         webbrowser.open(YAHOO_LIST)
@@ -245,6 +251,7 @@ class taskTray:
                         #     'calcintensity': '5強',
                         # }
                         report_id = data.get('report_id')
+                        self.progress = not not report_id
                         region_name = data.get('region_name')
                         calcintensity = data.get('calcintensity')
                         latitude = data.get('latitude')
