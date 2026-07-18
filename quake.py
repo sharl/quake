@@ -37,8 +37,8 @@ from vvox import vvox
 TITLE = 'quake'
 INTERVAL = 1
 TIMEOUT = 2
-CHECK_INTERVAL = 30
-RETRY_MAX = 30
+CHECK_INTERVAL = 5
+CHECK_SPAN = 10 * 60
 KMONI = 'http://www.kmoni.bosai.go.jp'
 LMONI = 'https://www.lmoni.bosai.go.jp/monitor/'
 YAHOO_LIST = 'https://typhoon.yahoo.co.jp/weather/jp/earthquake/list/'
@@ -388,7 +388,7 @@ class taskTray:
         # 震源・震度情報が揃うまで待機
         gl = None
         found = False
-        icount = 0
+        ibegin = time.time()    # information check start
         while not self.stop_event.is_set():
             # 'ttl': '震源・震度情報' であれば反映完了と思われる
             begin = time.time()
@@ -399,13 +399,12 @@ class taskTray:
                 if data:
                     logger.debug(f'Check list {eid} Found')
                     found = True
-                    icount = RETRY_MAX
+                    ibegin = 0          # reset information start time
                     break
-                icount += 1
             except Exception as e:
                 logger.debug(f'Check list Exception {e}')
 
-            if icount >= RETRY_MAX:
+            if time.time() - ibegin >= CHECK_SPAN:
                 break
 
             elapsed = time.time() - begin
@@ -419,7 +418,7 @@ class taskTray:
         # url contain eid check
         url = f'https://typhoon.yahoo.co.jp/weather/jp/earthquake/{eid}.html'
 
-        rcount = 0
+        rbegin = time.time()    # result check start
         while not self.stop_event.is_set():
             begin = time.time()
 
@@ -451,15 +450,12 @@ class taskTray:
                                     logger.warning(f'Check post error {e} {img_url}')
                     else:
                         logger.warning(f'status code {r.status_code} {url}')
-                        rcount += 1
             except requests.exceptions.Timeout as e:
                 logger.warning(f'Check Timeout {e} {url}')
-                rcount += 1
             except Exception as e:
                 logger.warning(f'Check Exception {e} {url}')
-                rcount += 1
 
-            if rcount >= RETRY_MAX:
+            if time.time() - rbegin >= CHECK_SPAN:
                 break
 
             elapsed = time.time() - begin
