@@ -101,22 +101,14 @@ class taskTray:
         # 遅延受信サブメニュー設定
         self.delay = 3
         self.delay_menu = []
-        # TODO: change toggle to slider
         for t in range(6):
             self.delay_menu.append(
                 MenuItem(str(t), self.setDelay, checked=lambda item: str(self.delay) == str(item))
             )
         # 検知震度サブメニュー設定
-        self.intensity_menu = [
-            MenuItem('Set All', self.setAll),
-            MenuItem('Unset All', self.unsetAll),
-            Menu.SEPARATOR,
-            MenuItem('Report Epicenter', self.toggleEpicenter, checked=lambda _: self.epicenter),
-            Menu.SEPARATOR,
-        ]
-        # TODO: change toggle to slider
+        self.intensity_menu = []
         for i in self.quake_check:
-            self.intensity_menu.append(MenuItem(i, self.toggle, checked=lambda x: self.quake_check[str(x)]))
+            self.intensity_menu.append(MenuItem(i, self.setIntensity, checked=lambda x: self.quake_check[str(x)]))
         # 設定読み込み
         self.load_config()
         # メニュー設定
@@ -144,6 +136,9 @@ class taskTray:
         self.config.save(asdict(setting))
 
     def update_menu(self):
+        for i in self.quake_check:
+            if self.quake_check[i]:
+                break
         item = [
             MenuItem(self.ward, self.reposition),
             Menu.SEPARATOR,
@@ -151,20 +146,13 @@ class taskTray:
             MenuItem('List', self.openYahoo),
             Menu.SEPARATOR,
             MenuItem('Sound', self.toggleSound, checked=lambda _: self.sound),
+            MenuItem('Report Epicenter', self.toggleEpicenter, checked=lambda _: self.epicenter),
             MenuItem('Delay', Menu(*self.delay_menu)),
-            MenuItem('Intensity',  Menu(*self.intensity_menu)),
+            MenuItem(f'Intensity {i}',  Menu(*self.intensity_menu)),
             Menu.SEPARATOR,
             MenuItem('Exit', self.stopApp),
         ]
         return Menu(*item)
-
-    def toggleSound(self, _, __):
-        self.sound = not self.sound
-        self.save_config()
-
-    def toggleEpicenter(self, _, __):
-        self.epicenter = not self.epicenter
-        self.save_config()
 
     def reposition(self, _, __):
         loc = getLocation()
@@ -174,8 +162,36 @@ class taskTray:
             self.ward = getNearWard(self.location)
             self.app.menu = self.update_menu()
 
+    def openLMONI(self):
+        if not keyboard.is_pressed('shift'):
+            webbrowser.open(LMONI)
+        else:
+            self.openYahoo()
+
+    def openYahoo(self):
+        webbrowser.open(YAHOO_LIST)
+
+    def toggleSound(self, _, __):
+        self.sound = not self.sound
+        self.save_config()
+
+    def toggleEpicenter(self, _, __):
+        self.epicenter = not self.epicenter
+        self.save_config()
+
     def setDelay(self, _, item):
         self.delay = int(str(item))
+        self.save_config()
+
+    def setIntensity(self, _, item):
+        item = str(item)
+        flag = False
+        for i in self.quake_check:
+            if i == item:
+                flag = True
+            self.quake_check[i] = flag
+        self.app.menu = self.update_menu()
+
         self.save_config()
 
     def doAlert(self):
@@ -193,30 +209,6 @@ class taskTray:
         stream.stop_stream()
         stream.close()
         pya.terminate()
-
-    def openLMONI(self):
-        if not keyboard.is_pressed('shift'):
-            webbrowser.open(LMONI)
-        else:
-            self.openYahoo()
-
-    def openYahoo(self):
-        webbrowser.open(YAHOO_LIST)
-
-    def setAll(self):
-        for i in self.quake_check:
-            self.quake_check[i] = True
-        self.save_config()
-
-    def unsetAll(self):
-        for i in self.quake_check:
-            self.quake_check[i] = False
-        self.save_config()
-
-    def toggle(self, _, _item):
-        item = str(_item)
-        self.quake_check[item] = not self.quake_check[item]
-        self.save_config()
 
     def doMonitor(self):
         """
