@@ -43,6 +43,7 @@ def get_epicenter(lat: float,
                   width: int = 480,
                   height: int = 480,
                   amedastable: dict = {},
+                  mapboxes: dict = {},
                   ) -> tuple[str, str]:
     text = str()
     url = str()
@@ -94,9 +95,10 @@ def get_epicenter(lat: float,
         print(d, zoom)
 
     # get mapbox static image with point marker
-    access_token = os.environ.get('MAPBOX_ACCESS_TOKEN')
-    username = os.environ.get('MAPBOX_USERNAME')
-    style_id = os.environ.get('MAPBOX_STYLE_ID')
+    envs = mapboxes if mapboxes else os.environ
+    access_token = envs.get('MAPBOX_ACCESS_TOKEN')
+    username = envs.get('MAPBOX_USERNAME')
+    style_id = envs.get('MAPBOX_STYLE_ID')
     if access_token and username and style_id:
         geodict = {
             "type": "Point",
