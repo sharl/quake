@@ -71,6 +71,7 @@ class Setting:
     sound: bool
     epicenter: bool
     delay: int
+    mapboxes: dict
 
 
 class taskTray:
@@ -90,6 +91,8 @@ class taskTray:
         self.quake_check = {i: (i not in ['1', '2']) for i in QUAKE_CLASS}
         self.sound = True
         self.epicenter = False
+        # epicenter use MAXBOX API keys
+        self.mapboxes = {}
 
         with wave.open(resource_path('Assets/nc124106m.wav'), 'rb') as wf:
             self.alert_sound = wf.readframes(wf.getnframes())
@@ -123,15 +126,34 @@ class taskTray:
             self.sound = setting.sound
             self.delay = setting.delay
             self.epicenter = setting.epicenter
+            self.mapboxes = setting.mapboxes
         except TypeError:
             pass
+
+        # environments check
+        if not self.mapboxes:
+            import os
+
+            access_token = os.environ.get('MAPBOX_ACCESS_TOKEN')
+            username = os.environ.get('MAPBOX_USERNAME')
+            style_id = os.environ.get('MAPBOX_STYLE_ID')
+            if access_token and username and style_id:
+                # import from environments
+                self.mapboxes.update({
+                    'MAPBOX_ACCESS_TOKEN': access_token,
+                    'MAPBOX_USERNAME': username,
+                    'MAPBOX_STYLE_ID': style_id,
+                })
+
+        self.save_config()
 
     def save_config(self):
         setting = Setting(
             check=self.quake_check,
             sound=self.sound,
             epicenter=self.epicenter,
-            delay=self.delay
+            delay=self.delay,
+            mapboxes=self.mapboxes,
         )
         self.config.save(asdict(setting))
 
@@ -311,7 +333,7 @@ class taskTray:
 
                                 if self.epicenter:
                                     # 震央取得
-                                    text, epi_url = get_epicenter(float(latitude), float(longitude))
+                                    text, epi_url = get_epicenter(float(latitude), float(longitude), maxboxes=self.mapboxes)
                                     data = {
                                         'text': text or region_name,
                                         'image_url': epi_url,

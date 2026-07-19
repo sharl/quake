@@ -24,15 +24,6 @@ cp post_template.py post.py
 python quake.py
 ```
 
-## Build
-
-```powershell
-pip install pyinstaller
-pyinstaller quake.py --clean --onefile --noconsole --icon=Assets\catfish.ico --add-data=Assets/nc124106m.wav;Assets
-```
-
-dist/ 配下に実行ファイルが生成されます
-
 ## config, log
 
 ```
@@ -41,6 +32,41 @@ dist/ 配下に実行ファイルが生成されます
 ```
 
 XDG_CONFIG_HOME, XDG_STATE_HOME に準拠しています
+
+一度実行すると ~\.config\quake\config.json が生成されます
+
+```powershell
+PS> Get-Content ~/.config/quake/config.json | python -m json.tool
+{
+    "check": {
+        "1": false,
+        "2": false,
+        "3": true,
+        "4": true,
+        "5\u8811\uff71": true,
+        "5\u8811\uff77": true,
+        "6\u8811\uff71": true,
+        "6\u8811\uff77": true,
+        "7": true
+    },
+    "sound": true,
+    "epicenter": false,
+    "delay": 3,
+    "mapboxes": {}
+}
+```
+
+### 震央情報に MAPBOX を使用可能
+
+maxboxes を設定することで震央に対応した画像URLを生成可能です
+
+```
+    "mapboxes": {
+        "MAPBOX_ACCESS_TOKEN": "YOUR MAPBOX ACCESS TOKEN",
+        "MAPBOX_USERNAME": "YOUR MAPBOX USER NAME",
+        "MAPBOX_STYLE_ID": "YOUR MAPBOX USER STYLE ID"
+    }
+```
 
 ## sound
 
