@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
 from dataclasses import asdict, dataclass
 from datetime import datetime as dt, timedelta as td
-import binascii
 import ctypes
-import io
 import logging
 import logging.handlers
 import threading
@@ -11,7 +9,7 @@ import time
 import wave
 import webbrowser
 
-from PIL import Image
+from PIL import Image, ImageEnhance
 from bs4 import BeautifulSoup as bs
 try:
     from post import post
@@ -100,7 +98,8 @@ class taskTray:
             self.channels = wf.getnchannels()
             self.rate = wf.getframerate()
 
-        image = Image.open(io.BytesIO(binascii.unhexlify(ICON.replace('\n', '').strip())))
+        self.r_icon = Image.open(resource_path('Assets/catfish.ico'))
+        self.n_icon = ImageEnhance.Brightness(self.r_icon).enhance(0.5)
         # 遅延受信サブメニュー設定
         self.delay = 3
         self.delay_menu = []
@@ -117,7 +116,7 @@ class taskTray:
         # メニュー設定
         menu = self.update_menu()
         title = getList(requests.Session()).get_title(None)
-        self.app = Icon(name=f'PYTHON.win32.{TITLE}', title=title, icon=image, menu=menu)
+        self.app = Icon(name=f'PYTHON.win32.{TITLE}', title=title, icon=self.n_icon, menu=menu)
 
     def load_config(self):
         try:
@@ -274,6 +273,7 @@ class taskTray:
                         # }
                         report_id = data.get('report_id')
                         self.progress = not not report_id
+                        self.app.icon = self.r_icon if self.progress else self.n_icon
                         region_name = data.get('region_name')
                         calcintensity = data.get('calcintensity')
                         latitude = data.get('latitude')
@@ -498,27 +498,6 @@ class taskTray:
 
         self.app.run()
 
-
-ICON = """
-47494638396110001000f700006b6b3f6c6c3e6e6e3e7676367d7d337979367979377171387373397676394242424c4c4746464a47474a4848494949
-494a4a4849494a4a4a4a4b4b4b4f4f494d4d4b4f4f4a4e4e4b48484c4b4b4c4a4a4d4b4b4d4c4c4c4d4d4d4f4f4f5555435151455252455353475151
-485353485353495454484f4f535050505151515252515252525353535757575555585858585959595d5d5d5e5e5e65654066665b7f7f5570705d6464
-6364646465656567676569696762626a6464686a6a697f7f797e7e7ab9b91bbfbf19baba1cbbbb1c96962995952b99992899992a9d9d28818134a0a0
-25a1a126a9a92aacac28adad34a0a03dc7c717cece14cfcf14d2d211d3d311d4d410dcdc15d4d41bd4d41cd5d51ce1e10ce8e809f0f006f0f007f5f5
-04f6f604f8f803f9f903fcfc01ffff00ffff01fefe02f9f904fafa04f4f408fdfd08e8e810e9e910c5c52bc5c52cd6d626d4d4298080488c8c4a9292
-46efef4ff0f04dd6d670d6d672e6e69ae6e69cd7d7c6d8d8c5d6d6cfd8d8d1d9d9d1dadad2e3e3c0e2e2c1e1e1ce0000000000000000000000000000
-000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0021f904000000000021ff0b496d6167654d616769636b0e67616d6d613d302e343534353435002c00000000100010000008d5009fd48853e0c38310
-03848421c3b0a18d1e34042c78f0a0410824601a3294c3038a17020d285264a291cc953958c8041149f103959267185a09c1b28191920da984c8c0a1
-6706041919869112858b129e3d396498b1258a9430494c9040502169d20a0848986052812752ab3e959248d055850ab01ccc66a860c0cb1000697b9a
-95cb41c0102f0c8d9c78d1428502052a5ebc38814463131738649c4d2b03870b271ae100f17103c78e1d386ef888f3a6611a3777f4f0f143da0f9f3d
-77dca42173260b1b3574f204122428109e3a6ad864391310003b
-"""
 
 if __name__ == '__main__':
     taskTray().runApp()
