@@ -257,7 +257,7 @@ class taskTray:
 
                     progress = not not data.get('report_id')
                     if progress is not self.progress:
-                        print('progress changed from {self.progress} to {progress}')
+                        print(f'progress changed from {self.progress} to {progress}')
                         self.progress = progress
                         self.app.icon = self.r_icon if self.progress else self.n_icon
 
