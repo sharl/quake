@@ -254,6 +254,13 @@ class taskTray:
             try:
                 with session.get(url, timeout=TIMEOUT) as r:
                     data = r.json()
+
+                    progress = not not data.get('report_id')
+                    if progress is not self.progress:
+                        print('progress changed from {self.progress} to {progress}')
+                        self.progress = progress
+                        self.app.icon = self.r_icon if self.progress else self.n_icon
+
                     if data.get('report_time'):
                         # logger.debug(data)
                         # 使えそうなパラメータ
@@ -272,8 +279,6 @@ class taskTray:
                         #     'calcintensity': '5強',
                         # }
                         report_id = data.get('report_id')
-                        self.progress = not not report_id
-                        self.app.icon = self.r_icon if self.progress else self.n_icon
                         region_name = data.get('region_name')
                         calcintensity = data.get('calcintensity')
                         latitude = data.get('latitude')
