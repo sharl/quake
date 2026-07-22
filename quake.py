@@ -89,7 +89,7 @@ class taskTray:
         self.quake_check = {i: (i not in ['1', '2']) for i in QUAKE_CLASS}
         self.sound = True
         self.epicenter = False
-        # epicenter use MAXBOX API keys
+        # epicenter use MAPBOX API keys
         self.mapboxes = {}
 
         with wave.open(resource_path('Assets/nc124106m.wav'), 'rb') as wf:
@@ -338,7 +338,7 @@ class taskTray:
 
                                 if self.epicenter:
                                     # 震央取得
-                                    text, epi_url = get_epicenter(float(latitude), float(longitude), maxboxes=self.mapboxes)
+                                    text, epi_url = get_epicenter(float(latitude), float(longitude), mapboxes=self.mapboxes)
                                     data = {
                                         'text': text or region_name,
                                         'image_url': epi_url,
