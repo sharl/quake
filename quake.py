@@ -257,7 +257,7 @@ class taskTray:
 
                     progress = not not data.get('report_id')
                     if progress is not self.progress:
-                        print(f'progress changed from {self.progress} to {progress}')
+                        logger.debug(f'progress changed from {self.progress} to {progress}')
                         self.progress = progress
                         self.app.icon = self.r_icon if self.progress else self.n_icon
 
@@ -343,7 +343,7 @@ class taskTray:
                                         'text': text or region_name,
                                         'image_url': epi_url,
                                     }
-                                    logger.debug(f'epicenter {text=} {epi_url=}')
+                                    logger.info(f'epicenter {data}')
                                     try:
                                         post(data)
                                     except RetryError:
