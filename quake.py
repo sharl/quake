@@ -409,7 +409,10 @@ class taskTray:
         if intensity > 1:
             message = f'警告: {int(delta)}秒後に到達します'
             logger.debug(message)
-            vvox(message, speed=1.2, volume=3.0)
+            try:
+                vvox(message, speed=1.2, volume=3.0)
+            except Exception:
+                pass
 
         # 震源・震度情報が揃うまで待機
         gl = None
