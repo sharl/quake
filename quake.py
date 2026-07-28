@@ -479,6 +479,8 @@ class taskTray:
                                     logger.warning(f'Check post error {e} {img_url}')
                     else:
                         logger.warning(f'status code {r.status_code} {url}')
+                        if r.status_code == 404:
+                            rbegin = 0
             except requests.exceptions.Timeout as e:
                 logger.warning(f'Check Timeout {e} {url}')
             except Exception as e:
