@@ -60,7 +60,7 @@ class getList:
         if not eid:
             eid = data['eid']
         # 発表時点の震源地
-        region_name = data['anm']
+        region_name = data.get('anm', '---')
         # 発表時点のマグニチュード
         magunitude = data['mag']
         # 発表時点の震源深さ
