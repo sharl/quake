@@ -42,6 +42,7 @@ def get_epicenter(lat: float,
                   pitch: float = 0,
                   width: int = 480,
                   height: int = 480,
+                  auto: bool = True,
                   amedastable: dict = {},
                   mapboxes: dict = {},
                   ) -> tuple[str, str]:
@@ -57,9 +58,8 @@ def get_epicenter(lat: float,
     except Exception:
         pass
 
-    # 住所が取得できない場合は海上とみなして拡大率を下げる
     # 2026/07/02 近くのアメダス観測地点までの距離から拡大率を決定
-    if not text:
+    if not text or auto:
         if not amedastable:
             url = 'https://www.jma.go.jp/bosai/amedas/const/amedastable.json'
             try:
