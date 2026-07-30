@@ -67,6 +67,7 @@ logger.setLevel(logging.DEBUG)
 class Setting:
     check: dict
     sound: bool
+    wsound: bool
     epicenter: bool
     delay: int
     mapboxes: dict
@@ -88,6 +89,7 @@ class taskTray:
         # quake class check: 1, 2 is False
         self.quake_check = {i: (i not in ['1', '2']) for i in QUAKE_CLASS}
         self.sound = True
+        self.wsound = True
         self.epicenter = False
         # epicenter use MAPBOX API keys
         self.mapboxes = {}
@@ -97,6 +99,12 @@ class taskTray:
             self.sample = wf.getsampwidth()
             self.channels = wf.getnchannels()
             self.rate = wf.getframerate()
+
+        with wave.open(resource_path('Assets/warning.wav'), 'rb') as wf:
+            self.warn_sound = wf.readframes(wf.getnframes())
+            self.wsample = wf.getsampwidth()
+            self.wchannels = wf.getnchannels()
+            self.wrate = wf.getframerate()
 
         self.r_icon = Image.open(resource_path('Assets/catfish.ico'))
         self.n_icon = ImageEnhance.Brightness(self.r_icon).enhance(0.5)
@@ -123,6 +131,7 @@ class taskTray:
             setting = Setting(**self.config.load())
             self.quake_check = setting.check
             self.sound = setting.sound
+            self.wsound = setting.wsound
             self.delay = setting.delay
             self.epicenter = setting.epicenter
             self.mapboxes = setting.mapboxes
@@ -150,6 +159,7 @@ class taskTray:
         setting = Setting(
             check=self.quake_check,
             sound=self.sound,
+            wsound=self.wsound,
             epicenter=self.epicenter,
             delay=self.delay,
             mapboxes=self.mapboxes,
@@ -168,7 +178,8 @@ class taskTray:
             MenuItem('長周期地震動モニタ', self.openLMONI),
             MenuItem('地震の履歴一覧', self.openYahoo),
             Menu.SEPARATOR,
-            MenuItem('Sound', self.toggleSound, checked=lambda _: self.sound),
+            MenuItem('Alert Sound', self.toggleSound, checked=lambda _: self.sound),
+            MenuItem('Warn Sound', self.toggleWSound, checked=lambda _: self.wsound),
             MenuItem('Report Epicenter', self.toggleEpicenter, checked=lambda _: self.epicenter),
             MenuItem('Delay', Menu(*self.delay_menu)),
             MenuItem(f'Intensity {i}',  Menu(*self.intensity_menu)),
@@ -200,6 +211,10 @@ class taskTray:
 
     def toggleSound(self, _, __):
         self.sound = not self.sound
+        self.save_config()
+
+    def toggleWSound(self, _, __):
+        self.wsound = not self.wsound
         self.save_config()
 
     def toggleEpicenter(self, _, __):
@@ -237,6 +252,22 @@ class taskTray:
         stream.close()
         pya.terminate()
 
+    def doWarn(self):
+        if not self.wsound:
+            return
+
+        pya = pyaudio.PyAudio()
+        stream = pya.open(
+            format=pya.get_format_from_width(self.wsample),
+            channels=self.wchannels,
+            rate=self.wrate,
+            output=True,
+        )
+        stream.write(self.warn_sound)
+        stream.stop_stream()
+        stream.close()
+        pya.terminate()
+
     def doMonitor(self):
         """
         待機スレッド
@@ -260,6 +291,9 @@ class taskTray:
                         logger.debug(f'progress changed from {self.progress} to {progress}')
                         self.progress = progress
                         self.app.icon = self.r_icon if self.progress else self.n_icon
+
+                    if self.progress:
+                        self.doWarn()
 
                     if data.get('report_time'):
                         # logger.debug(data)

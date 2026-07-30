@@ -73,3 +73,7 @@ maxboxes を設定することで震央に対応した画像URLを生成可能�
 ニュース速報のアラーム - ニコニ・コモンズ  
 https://commons.nicovideo.jp/works/nc124106  
 をトリミングしたものを利用しています
+
+フリー効果音：警告音｜OtoLogic  
+https://otologic.jp/free/se/warning01.html  
+をトリミングしてゲインを下げたものを使用しています
