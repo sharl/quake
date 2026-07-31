@@ -7,6 +7,7 @@ def post(data: dict) -> None:
     image_url = data.get('image_url')
     title = None
     body = None
+    image = None
     group = None
     tag = None
 
@@ -19,6 +20,7 @@ def post(data: dict) -> None:
         else:
             title = text
             group = 'epicenter'
+        image = {'src': image_url, 'placement': 'hero'}
     else:
         title = m[3]
         body = ' '.join(m[4:])
@@ -27,7 +29,7 @@ def post(data: dict) -> None:
     notify(
         title,
         body=body,
-        image={'src': image_url, 'placement': 'hero'},
+        image=image,
         group=group,
         tag=tag,
         audio={'silent': 'true'},
