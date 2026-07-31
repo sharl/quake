@@ -12,7 +12,23 @@ VOICEVOX Engine が起動していれば "警告: n秒後に到達します" と
 
 etc..
 
-## Run
+## notification sample
+
+Windows通知センターを利用したサンプルを `post_notify.py` として配置しました
+
+```powershell
+Copy-Item post_template.py post.py
+```
+
+の代わりに
+
+```powershell
+Copy-Item post_notify.py post.py
+```
+
+として下記の run の手順を実行してください
+
+## run
 
 ```powershell
 git clone https://github.com/sharl/quake.git
@@ -20,7 +36,8 @@ cd quake
 python -m venv .venv
 .\.venv\Scripts\activate
 pip install -r requirements.txt
-cp post_template.py post.py
+Copy-Item post_template.py post.py
+# Copy-Item post_notify.py post.py
 python quake.py
 ```
 
