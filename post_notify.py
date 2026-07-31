@@ -27,7 +27,7 @@ def post(data: dict) -> None:
     notify(
         title,
         body=body,
-        image=image_url,
+        image={'src': image_url, 'placement': 'hero'},
         group=group,
         tag=tag,
         audio={'silent': 'true'},
