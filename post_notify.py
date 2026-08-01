@@ -69,6 +69,7 @@ def post(data: dict) -> None:
         title = m[3]
         body = ' '.join(m[4:])
         group = title
+        tag = 'info'
 
     notify(
         title,
