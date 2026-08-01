@@ -51,7 +51,7 @@ def post(data: dict) -> None:
             title = m[2]
             body = f"{' '.join(m[3:8])}\n{' '.join(m[8:])}"
             group = title
-            tag = 'point info'
+            tag = 'info'
         else:
             title = text
             group = title
