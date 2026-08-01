@@ -51,9 +51,11 @@ def post(data: dict) -> None:
             title = m[2]
             body = f"{' '.join(m[3:8])}\n{' '.join(m[8:])}"
             group = title
+            tag = 'point info'
         else:
             title = text
-            group = 'epicenter'
+            group = title
+            tag = 'epicenter info'
 
         with requests.get(image_url, timeout=10) as r:
             hero_img = _img2hero(Image.open(io.BytesIO(r.content)))
