@@ -36,6 +36,7 @@ INTERVAL = 1
 TIMEOUT = 2
 CHECK_INTERVAL = 5
 CHECK_SPAN = 10 * 60
+CALC_INTENSITY = 0.5
 KMONI = 'http://www.kmoni.bosai.go.jp'
 LMONI = 'https://www.lmoni.bosai.go.jp/monitor/'
 YAHOO_LIST = 'https://typhoon.yahoo.co.jp/weather/jp/earthquake/list/'
@@ -336,7 +337,7 @@ class taskTray:
                             float(magunitude),
                         )
                         dist, delta, intensity = calc(report_id, self.location, eq_pos)
-                        if intensity > 1:
+                        if intensity > CALC_INTENSITY:
                             if delta >= 0 and (delta < 5 or int(delta) % 5 == 0):
                                 message = f'{report_id} 到達まであと {int(delta)} 秒'
                                 self.app.title = message
@@ -440,7 +441,7 @@ class taskTray:
         dist, delta, intensity = calc(eid, self.location, eq_pos)
 
         logger.debug(f'{dist=:.1f}km {delta=:.1f}s {intensity=:.4f}')
-        if intensity > 1:
+        if intensity > CALC_INTENSITY:
             message = f'警告: {int(delta)}秒後に到達します'
             logger.debug(message)
             try:
