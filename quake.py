@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 from dataclasses import asdict, dataclass
 from datetime import datetime as dt, timedelta as td
+from enum import Enum
 import ctypes
 import logging
 import logging.handlers
+import queue
 import threading
 import time
 import wave
@@ -63,6 +65,11 @@ logger = logging.getLogger(TITLE)
 logger.setLevel(logging.DEBUG)
 
 
+class Sound(Enum):
+    ALERT = 1
+    WARNING = 2
+
+
 # 保存する設定の型定義
 @dataclass
 class Setting:
@@ -79,6 +86,7 @@ class taskTray:
         self.stop_event = threading.Event()
         self.progress = False
         self.config = Config(TITLE)
+        self.sound_queue = queue.Queue()
         # 待機スレッド
         self.threads = {}
         # レポート初期化
@@ -237,6 +245,18 @@ class taskTray:
 
         self.save_config()
 
+    def sound_worker(self):
+        while not self.stop_event.is_set():
+            try:
+                sound = self.sound_queue.get(timeout=0.1)
+                match sound:
+                    case Sound.ALERT:
+                        self.doAlert()
+                    case Sound.WARNING:
+                        self.doWarn()
+            except Exception:
+                pass
+
     def doAlert(self):
         if not self.sound:
             return
@@ -294,7 +314,7 @@ class taskTray:
                         self.app.icon = self.r_icon if self.progress else self.n_icon
 
                     if self.progress:
-                        self.doWarn()
+                        self.sound_queue.put(Sound.WARNING)
 
                     if data.get('report_time'):
                         # logger.debug(data)
@@ -420,7 +440,7 @@ class taskTray:
         """
         監視スレッド
         """
-        self.doAlert()
+        self.sound_queue.put(Sound.ALERT)
 
         # session for jma, yahoo
         session = requests.Session()
@@ -538,8 +558,8 @@ class taskTray:
     def runApp(self):
         self.stop_event.clear()
 
-        monitor_thread = threading.Thread(target=self.doMonitor, name='Monitor')
-        monitor_thread.start()
+        threading.Thread(target=self.sound_worker, daemon=True).start()
+        threading.Thread(target=self.doMonitor, name='Monitor').start()
 
         self.app.run()
 
