@@ -8,8 +8,8 @@ import logging.handlers
 import queue
 import threading
 import time
-import wave
 import webbrowser
+import winsound
 
 from PIL import Image, ImageEnhance
 from bs4 import BeautifulSoup as bs
@@ -21,7 +21,6 @@ except ModuleNotFoundError as e:
 from pystray import Icon, Menu, MenuItem
 from tenacity import RetryError
 import darkdetect as dd
-import pyaudio
 import requests
 
 from calc import calc
@@ -102,18 +101,6 @@ class taskTray:
         self.epicenter = False
         # epicenter use MAPBOX API keys
         self.mapboxes = {}
-
-        with wave.open(resource_path('Assets/nc124106m.wav'), 'rb') as wf:
-            self.alert_sound = wf.readframes(wf.getnframes())
-            self.sample = wf.getsampwidth()
-            self.channels = wf.getnchannels()
-            self.rate = wf.getframerate()
-
-        with wave.open(resource_path('Assets/warning.wav'), 'rb') as wf:
-            self.warn_sound = wf.readframes(wf.getnframes())
-            self.wsample = wf.getsampwidth()
-            self.wchannels = wf.getnchannels()
-            self.wrate = wf.getframerate()
 
         self.r_icon = Image.open(resource_path('Assets/catfish.ico'))
         self.n_icon = ImageEnhance.Brightness(self.r_icon).enhance(0.5)
@@ -261,33 +248,19 @@ class taskTray:
         if not self.sound:
             return
 
-        pya = pyaudio.PyAudio()
-        stream = pya.open(
-            format=pya.get_format_from_width(self.sample),
-            channels=self.channels,
-            rate=self.rate,
-            output=True,
+        winsound.PlaySound(
+            resource_path('Assets/nc124106m.wav'),
+            winsound.SND_FILENAME | winsound.SND_ASYNC
         )
-        stream.write(self.alert_sound)
-        stream.stop_stream()
-        stream.close()
-        pya.terminate()
 
     def doWarn(self):
         if not self.wsound:
             return
 
-        pya = pyaudio.PyAudio()
-        stream = pya.open(
-            format=pya.get_format_from_width(self.wsample),
-            channels=self.wchannels,
-            rate=self.wrate,
-            output=True,
+        winsound.PlaySound(
+            resource_path('Assets/warning.wav'),
+            winsound.SND_FILENAME | winsound.SND_ASYNC
         )
-        stream.write(self.warn_sound)
-        stream.stop_stream()
-        stream.close()
-        pya.terminate()
 
     def doMonitor(self):
         """
