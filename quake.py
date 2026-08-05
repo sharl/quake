@@ -12,6 +12,7 @@ import webbrowser
 import winsound
 
 from PIL import Image, ImageEnhance
+from bottle import Bottle, request, response, HTTP_CODES
 from bs4 import BeautifulSoup as bs
 try:
     from post import post
@@ -85,6 +86,8 @@ class taskTray:
         self.stop_event = threading.Event()
         self.progress = False
         self.config = Config(TITLE)
+        self.api_server = Bottle()
+        self.setup_routes()
         self.sound_queue = queue.Queue()
         # 待機スレッド
         self.threads = {}
@@ -524,6 +527,83 @@ class taskTray:
 
         logger.debug(f'Check thread {eid} Finished')
 
+    def setup_routes(self):
+        @self.api_server.route('/api/<path:path>', method=['GET', 'POST'])
+        def api(path):
+            def error(code):
+                response.status = code
+                return {'status': 'ng', 'state': HTTP_CODES[code]}
+
+            state = None
+            match request.method:
+                # GET ==================================================
+                case 'GET':
+                    match path:
+                        case 'alert':
+                            state = self.sound
+                        case 'warn':
+                            state = self.wsound
+                        case 'epicenter':
+                            state = self.epicenter
+                        case 'intensity':
+                            for i in self.quake_check:
+                                if self.quake_check[i]:
+                                    break
+                            state = i
+                        case _:
+                            return error(400)
+
+                    return {'status': 'ok', 'state': state}
+                # /GET =================================================
+
+                # POST =================================================
+                case 'POST':
+                    data = None
+                    match request.json:
+                        case dict() as data:
+                            pass
+                        case _ if request.forms:
+                            data = {k: request.forms.getunicode(k) for k in request.forms}
+                        case _:
+                            return error(400)
+
+                    value = None
+                    if path in data:
+                        value = data[path]
+
+                    match path:
+                        case _ if path in ['alert', 'warn', 'epicenter']:
+                            if value in ['on', 'off']:
+                                match path:
+                                    case 'alert':
+                                        self.sound = value == 'on'
+                                    case 'warn':
+                                        self.wsound = value == 'on'
+                                    case 'epicenter':
+                                        self.epicenter = value == 'on'
+                                self.app.menu = self.update_menu()
+                                self.save_config()
+                            else:
+                                return error(400)
+
+                        case 'intensity':
+                            if value in QUAKE_CLASS:
+                                self.setIntensity(None, value)
+                            else:
+                                return error(400)
+
+                        case _:
+                            return error(400)
+
+                    return {'status': 'ok'}
+                # /POST ================================================
+
+                case _:
+                    return error(405)
+
+    def run_api(self):
+        self.api_server.run(host='192.168.0.1', port=15678)
+
     def stopApp(self):
         self.stop_event.set()
         self.app.stop()
@@ -533,6 +613,7 @@ class taskTray:
 
         threading.Thread(target=self.sound_worker, daemon=True).start()
         threading.Thread(target=self.doMonitor, name='Monitor').start()
+        threading.Thread(target=self.run_api, daemon=True).start()
 
         self.app.run()
 
