@@ -4,8 +4,12 @@ import tempfile
 
 from PIL import Image
 from win11toast import notify
+from winrt.windows.ui.notifications import ToastNotificationManager
 from winrt.windows.ui.viewmanagement import UISettings
 import requests
+
+TAG_INFO = 'info'
+TAG_EPICENTER = 'epicenter info'
 
 
 def _img2hero(img: Image) -> Image:
@@ -51,11 +55,11 @@ def post(data: dict) -> None:
             title = m[2]
             body = f"{' '.join(m[3:8])}\n{' '.join(m[8:])}"
             group = title
-            tag = 'info'
+            tag = TAG_INFO
         else:
             title = text
-            group = title
-            tag = 'epicenter info'
+            # group = title
+            tag = TAG_EPICENTER
 
         with requests.get(image_url, timeout=10) as r:
             hero_img = _img2hero(Image.open(io.BytesIO(r.content)))
@@ -71,7 +75,7 @@ def post(data: dict) -> None:
         title = m[3]
         body = ' '.join(m[4:])
         group = title
-        tag = 'info'
+        tag = TAG_INFO
 
     notify(
         title,
@@ -81,3 +85,6 @@ def post(data: dict) -> None:
         tag=tag,
         audio={'silent': 'true'},
     )
+    if image_url and tag == TAG_INFO:
+        # 震度分布図が出たら通知から震央を消す
+        ToastNotificationManager.history.remove(TAG_EPICENTER)
