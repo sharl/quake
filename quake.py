@@ -343,17 +343,16 @@ class taskTray:
                             logger.debug(result)
                             pre_result = result
 
-                        # 指定された震度の場合のみ監視開始
-                        if self.quake_check[calcintensity] and \
-                           (
-                               self.reports.get(report_id, {}).get('region_name') != region_name
-                               or
-                               self.reports.get(report_id, {}).get('calcintensity') != calcintensity
-                               or
-                               self.reports.get(report_id, {}).get('depth') != depth
-                               or
-                               self.reports.get(report_id, {}).get('magunitude') != magunitude
-                           ):
+                        # 指定された震度または有感の可能性がある場合監視開始
+                        if (self.quake_check[calcintensity] and (
+                                self.reports.get(report_id, {}).get('region_name') != region_name
+                                or
+                                self.reports.get(report_id, {}).get('calcintensity') != calcintensity
+                                or
+                                self.reports.get(report_id, {}).get('depth') != depth
+                                or
+                                self.reports.get(report_id, {}).get('magunitude') != magunitude
+                        )) or (intensity > CALC_INTENSITY):
                             self.reports[report_id] = {
                                 'region_name': region_name,
                                 'calcintensity': calcintensity,
