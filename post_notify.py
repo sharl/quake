@@ -43,6 +43,7 @@ def _img2hero(img: Image) -> Image:
 def post(data: dict) -> None:
     text = data.get('text', '')
     image_url = data.get('image_url')
+    on_click = None
     title = None
     body = None
     image = None
@@ -52,6 +53,8 @@ def post(data: dict) -> None:
     m = text.split()
     if image_url:
         if image_url.startswith('https://weather-pctr.c.yimg.jp'):
+            eid = image_url.split('/')[6]
+            on_click = f'https://typhoon.yahoo.co.jp/weather/jp/earthquake/{eid}.html'
             title = m[2]
             body = f"{' '.join(m[3:8])}\n{' '.join(m[8:])}"
             group = title
@@ -83,6 +86,7 @@ def post(data: dict) -> None:
         image=image,
         group=group,
         tag=tag,
+        on_click=on_click,
         audio={'silent': 'true'},
     )
     if image_url and tag == TAG_INFO:
