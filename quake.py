@@ -283,13 +283,14 @@ class taskTray:
                 with session.get(url, timeout=TIMEOUT) as r:
                     data = r.json()
 
+                    is_final = data.get('is_final', False)
                     progress = not not data.get('report_id')
                     if progress is not self.progress:
                         logger.debug(f'progress changed from {self.progress} to {progress}')
                         self.progress = progress
                         self.app.icon = self.r_icon if self.progress else self.n_icon
 
-                    if self.progress:
+                    if self.progress and not is_final:
                         self.sound_queue.put(Sound.WARNING)
 
                     if data.get('report_time'):
@@ -318,7 +319,7 @@ class taskTray:
                         magunitude = data.get('magunitude')
                         lines = [
                             '【訓練】' if data.get('is_training') else '',
-                            data.get('report_time') + (' 最終報' if data.get('is_final') else f' 第{data.get("report_num")}報'),
+                            data.get('report_time') + (' 最終報' if is_final else f' 第{data.get("report_num")}報'),
                             region_name,
                             f'M{magunitude} 深さ {depth}',
                             f'最大予測震度 {calcintensity}',
