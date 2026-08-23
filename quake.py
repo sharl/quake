@@ -277,7 +277,7 @@ class taskTray:
             # 受信開始
             now = (dt.now() - td(seconds=self.delay)).strftime('%Y%m%d%H%M%S')
             url = f'{KMONI}/webservice/hypo/eew/{now}.json'
-            begin = time.time()
+            begin = time.perf_counter()
 
             try:
                 with session.get(url, timeout=TIMEOUT) as r:
@@ -406,7 +406,7 @@ class taskTray:
                         del self.reports[eid]
                         logger.debug(f'Check thread {eid} Done')
 
-            elapsed = time.time() - begin
+            elapsed = time.perf_counter() - begin
             sleep_time = max(0, INTERVAL - elapsed)
             if self.stop_event.wait(sleep_time):
                 break
@@ -447,10 +447,10 @@ class taskTray:
         # 震源・震度情報が揃うまで待機
         gl = None
         found = False
-        ibegin = time.time()    # information check start
+        ibegin = time.perf_counter()    # information check start
         while not self.stop_event.is_set():
             # 'ttl': '震源・震度情報' であれば反映完了と思われる
-            begin = time.time()
+            begin = time.perf_counter()
 
             try:
                 gl = getList(session)
@@ -463,10 +463,10 @@ class taskTray:
             except Exception as e:
                 logger.debug(f'Check list Exception {e}')
 
-            if time.time() - ibegin >= CHECK_SPAN:
+            if time.perf_counter() - ibegin >= CHECK_SPAN:
                 break
 
-            elapsed = time.time() - begin
+            elapsed = time.perf_counter() - begin
             sleep_time = max(0, CHECK_INTERVAL - elapsed)
             if self.stop_event.wait(sleep_time):
                 break
@@ -477,9 +477,9 @@ class taskTray:
         # url contain eid check
         url = f'https://typhoon.yahoo.co.jp/weather/jp/earthquake/{eid}.html'
 
-        rbegin = time.time()    # result check start
+        rbegin = time.perf_counter()    # result check start
         while not self.stop_event.is_set():
-            begin = time.time()
+            begin = time.perf_counter()
 
             try:
                 with session.get(url, timeout=1) as r:
@@ -516,10 +516,10 @@ class taskTray:
             except Exception as e:
                 logger.warning(f'Check Exception {e} {url}')
 
-            if time.time() - rbegin >= CHECK_SPAN:
+            if time.perf_counter() - rbegin >= CHECK_SPAN:
                 break
 
-            elapsed = time.time() - begin
+            elapsed = time.perf_counter() - begin
             sleep_time = max(0, CHECK_INTERVAL - elapsed)
             if self.stop_event.wait(sleep_time):
                 break
