@@ -59,7 +59,7 @@ class getList:
         # return ' '.join(lines)
         return ''
 
-    def get_title(self, eid: str | None) -> str:
+    def get_title(self, eid: str | None, end: str = '\n') -> str:
         data = self.find(eid)
 
         if not eid:
@@ -81,7 +81,7 @@ class getList:
             f"最大震度 {intensity}",
             loc,
         ]
-        return '\n'.join(lines).strip()
+        return end.join(lines).strip()
 
     def get_depth(self, cod: str) -> str:
         # '+28.6+129.7+0/',      # ごく浅い
