@@ -12,8 +12,13 @@ class getList:
     """
     def __init__(self, session: requests.Session):
         self.session: requests.Session = session
+        self.data: list[dict] = []
+        self.load()
+
+    def load(self):
         with self.session.get(LIST_URL, timeout=3) as r:
-            self.data: dict = r.json()
+            del self.data
+            self.data = r.json()
 
     def find(self, eid: str | None) -> dict:
         """
