@@ -91,6 +91,8 @@ class taskTray:
         self.sound_queue = queue.Queue()
         # 待機スレッド
         self.threads = {}
+        self.gl = getList(requests.Session())
+        self.gl.load()
         # レポート初期化
         self.reports = {}
         # 位置情報取得
@@ -122,7 +124,7 @@ class taskTray:
         self.load_config()
         # メニュー設定
         menu = self.update_menu()
-        title = getList(requests.Session()).get_title(None)
+        title = self.gl.get_title(None)
         self.app = Icon(name=f'PYTHON.win32.{TITLE}', title=title, icon=self.n_icon, menu=menu)
 
     def load_config(self):
@@ -446,7 +448,6 @@ class taskTray:
                 pass
 
         # 震源・震度情報が揃うまで待機
-        gl = None
         found = False
         ibegin = time.perf_counter()    # information check start
         while not self.stop_event.is_set():
@@ -454,8 +455,8 @@ class taskTray:
             begin = time.perf_counter()
 
             try:
-                gl = getList(session)
-                data = gl.find(eid)
+                self.gl.load()
+                data = self.gl.find(eid)
                 if data:
                     logger.debug(f'Check list {eid} Found')
                     found = True
@@ -494,7 +495,7 @@ class taskTray:
                                     raise Exception('OGP not ready')
 
                                 try:
-                                    self.app.title = title = gl.get_title(eid)
+                                    self.app.title = title = self.gl.get_title(eid)
                                     text = title.replace('\n', ' ')
                                     post({
                                         'text': text,
