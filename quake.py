@@ -321,7 +321,7 @@ class taskTray:
                         magunitude = data.get('magunitude')
                         lines = [
                             '【訓練】' if data.get('is_training') else '',
-                            data.get('report_time') + (' 最終報' if is_final else f' 第{data.get("report_num")}報'),
+                            data.get('report_time') + (' 最終報' if is_final else f' 第{data.get("report_num"):>2}報'),
                             region_name,
                             f'M{magunitude} 深さ {depth}',
                             f'最大予測震度 {calcintensity}',
