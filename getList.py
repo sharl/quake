@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime as dt
+import gc
 
 import requests
 
@@ -13,12 +14,19 @@ class getList:
     def __init__(self, session: requests.Session):
         self.session: requests.Session = session
         self.data: list[dict] = []
-        self.load()
+        self.last_modified = None
 
     def load(self):
-        with self.session.get(LIST_URL, timeout=3) as r:
-            del self.data
+        headers = {
+            'If-Modified-Since': self.last_modified,
+        }
+        with self.session.get(LIST_URL, headers=headers, timeout=3) as r:
+            if r.status_code == 304:
+                return
+
+            self.last_modified = r.headers.get('Last-Modified')
             self.data = r.json()
+            gc.collect()
 
     def find(self, eid: str | None) -> dict:
         """
