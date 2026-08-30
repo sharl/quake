@@ -124,6 +124,7 @@ class taskTray:
         self.load_config()
         # メニュー設定
         menu = self.update_menu()
+        # update thread 実行前に反映しておく
         title = self.gl.get_title(None)
         self.app = Icon(name=f'PYTHON.win32.{TITLE}', title=title, icon=self.n_icon, menu=menu)
 
@@ -455,7 +456,7 @@ class taskTray:
             begin = time.perf_counter()
 
             try:
-                self.gl.load()
+                # update thread で反映されたデータから検索
                 data = self.gl.find(eid)
                 if data:
                     logger.debug(f'Check list {eid} Found')
@@ -527,6 +528,30 @@ class taskTray:
                 break
 
         logger.debug(f'Check thread {eid} Finished')
+
+    def doUpdate(self):
+        """
+        更新スレッド
+        """
+        ptitle = str()
+
+        while not self.stop_event.is_set():
+            begin = time.perf_counter()
+
+            try:
+                self.gl.load()
+                title = self.gl.get_title(None)
+                if ptitle != title:
+                    logger.debug(f'Update {title.replace("\n", " ")}')
+                    self.app.title = ptitle = title
+                    self.sound_queue.put(Sound.WARNING)
+            except Exception:
+                pass
+
+            elapsed = time.perf_counter() - begin
+            sleep_time = max(0, CHECK_INTERVAL - elapsed)
+            if self.stop_event.wait(sleep_time):
+                break
 
     def setup_routes(self):
         @self.api_server.route('/api/<path:path>', method=['GET', 'POST'])
@@ -614,6 +639,7 @@ class taskTray:
 
         threading.Thread(target=self.sound_worker, daemon=True).start()
         threading.Thread(target=self.doMonitor, name='Monitor').start()
+        threading.Thread(target=self.doUpdate, name='Update').start()
         threading.Thread(target=self.run_api, daemon=True).start()
 
         self.app.run()
