@@ -68,9 +68,14 @@ class getList:
         return ''
 
     def get_title(self, eid: str | None, end: str = '\n') -> str:
+        """
+        eid が指定されていない場合は最大震度の市町村を取得しない
+        """
         data = self.find(eid)
+        cities = False
 
         if not eid:
+            ciities = True
             eid = data['eid']
         # 発表時点の震源地
         region_name = data.get('anm', '---')
@@ -80,7 +85,7 @@ class getList:
         depth = self.get_depth(data['cod'])
         # 発表時点の最大震度
         intensity = data['maxi'].replace('+', '強').replace('-', '弱')
-        loc = self.get_maxi_cities(None)
+        loc = self.get_maxi_cities(None) if cities else ''
 
         lines = [
             dt.strptime(eid, '%Y%m%d%H%M%S').strftime('%Y/%m/%d %H:%M:%S'),
