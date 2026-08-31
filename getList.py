@@ -72,10 +72,10 @@ class getList:
         eid が指定されていない場合は最大震度の市町村を取得しない
         """
         data = self.find(eid)
-        cities = False
+        cities = True
 
         if not eid:
-            cities = True
+            cities = False
             eid = data['eid']
         # 発表時点の震源地
         region_name = data.get('anm', '---')
