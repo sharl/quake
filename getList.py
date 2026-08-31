@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
-from datetime import datetime as dt
+from datetime import datetime as dt, timedelta as td
 import gc
 
 import requests
 
+DAYS_BEFORE = 7
 LIST_URL: str = 'https://www.jma.go.jp/bosai/quake/data/list.json'
 
 
@@ -16,7 +17,7 @@ class getList:
         self.data: list[dict] = []
         self.last_modified = None
 
-    def load(self):
+    def load(self, days: int = DAYS_BEFORE):
         headers = {
             'If-Modified-Since': self.last_modified,
         }
@@ -25,7 +26,13 @@ class getList:
                 return
 
             self.last_modified = r.headers.get('Last-Modified')
-            self.data = r.json()
+            lw = int((dt.now() - td(days=days)).strftime('%Y%m%d%H%M%S'))
+            data = []
+            for d in r.json():
+                eid = int(d.get('eid', 0))
+                if d.get('ttl') == '震源・震度情報' and eid >= lw:
+                    data.append(d)
+            self.data = data
             gc.collect()
 
     def find(self, eid: str | None) -> dict:
