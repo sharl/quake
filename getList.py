@@ -75,7 +75,7 @@ class getList:
         cities = False
 
         if not eid:
-            ciities = True
+            cities = True
             eid = data['eid']
         # 発表時点の震源地
         region_name = data.get('anm', '---')
