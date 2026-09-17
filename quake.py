@@ -77,6 +77,7 @@ class Setting:
     sound: bool
     wsound: bool
     epicenter: bool
+    report_progress: bool
     delay: int
     mapboxes: dict
 
@@ -104,6 +105,7 @@ class taskTray:
         self.sound = True
         self.wsound = True
         self.epicenter = False
+        self.report_progress = False
         # epicenter use MAPBOX API keys
         self.mapboxes = {}
 
@@ -136,6 +138,7 @@ class taskTray:
             self.wsound = setting.wsound
             self.delay = setting.delay
             self.epicenter = setting.epicenter
+            self.report_progress = setting.report_progress
             self.mapboxes = setting.mapboxes
         except TypeError:
             pass
@@ -163,6 +166,7 @@ class taskTray:
             sound=self.sound,
             wsound=self.wsound,
             epicenter=self.epicenter,
+            report_progress=self.report_progress,
             delay=self.delay,
             mapboxes=self.mapboxes,
         )
@@ -183,6 +187,7 @@ class taskTray:
             MenuItem('Alert Sound', self.toggleSound, checked=lambda _: self.sound),
             MenuItem('Warn Sound', self.toggleWSound, checked=lambda _: self.wsound),
             MenuItem('Report Epicenter', self.toggleEpicenter, checked=lambda _: self.epicenter),
+            MenuItem('Report Progress', self.toggleReportProgress, checked=lambda _: self.report_progress),
             MenuItem('Delay', Menu(*self.delay_menu)),
             MenuItem(f'Intensity {i}',  Menu(*self.intensity_menu)),
             Menu.SEPARATOR,
@@ -221,6 +226,10 @@ class taskTray:
 
     def toggleEpicenter(self, _, __):
         self.epicenter = not self.epicenter
+        self.save_config()
+
+    def toggleReportProgress(self, _, __):
+        self.report_progress = not self.report_progress
         self.save_config()
 
     def setDelay(self, _, item):
@@ -364,6 +373,8 @@ class taskTray:
                                 'longitude': longitude,
                                 'depth': depth,
                                 'magunitude': magunitude,
+                                # if self.report_progress is False, first is flagged
+                                'first': False,
                             }
                             if report_id not in self.threads:
                                 # 監視スレッドスタート
@@ -386,9 +397,13 @@ class taskTray:
                                         logger.warning(f'Task epicenter post Timeout {e} {now}')
 
                             try:
-                                post({
-                                    'text': result,
-                                })
+                                if self.reports[report_id].get('first') is False:
+                                    post({
+                                        'text': result,
+                                    })
+                                    if self.report_progress is False:
+                                        # first only
+                                        self.reports[report_id]['first'] = True
                                 logger.info(result)
                             except RetryError:
                                 logger.warning(f'Task post error {now}')
