@@ -51,6 +51,10 @@ def post(data: dict) -> None:
     tag = None
 
     m = text.split()
+    # report_num 補正
+    if m[2] == '第':
+        m[2] += m[3]
+        del m[3]
     if image_url:
         if image_url.startswith('https://weather-pctr.c.yimg.jp'):
             eid = image_url.split('/')[6]
