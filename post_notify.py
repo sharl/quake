@@ -52,7 +52,7 @@ def post(data: dict) -> None:
 
     m = text.split()
     # report_num 補正
-    if m[2] == '第':
+    if len(m) > 1 and m[2] == '第':
         m[2] += m[3]
         del m[3]
     if image_url:
