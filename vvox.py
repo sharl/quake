@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 import io
+import struct
 import sys
 import wave
 
-import pyaudio
+from pvspeaker import PvSpeaker
 import requests
 
 
@@ -34,16 +35,21 @@ def vvox(text, host='127.0.0.1', port=50021, speaker=3, speed=1.0, volume=1.0, s
         sys.stdout.buffer.flush()
     else:
         with wave.open(io.BytesIO(synthesis.content), 'rb') as wf:
-            data = wf.readframes(wf.getnframes())
+            sample_rate = wf.getframerate()
+            sample_width = wf.getsampwidth()
+            bits_per_sample = sample_width * 8
 
-            pya = pyaudio.PyAudio()
-            stream = pya.open(
-                format=pya.get_format_from_width(wf.getsampwidth()),
-                channels=wf.getnchannels(),
-                rate=wf.getframerate(),
-                output=True,
+            # unpack to picovoice array
+            raw_bytes = wf.readframes(wf.getnframes())
+            num_samples = len(raw_bytes) // sample_width
+            pcm_data = struct.unpack(f"{num_samples}h", raw_bytes)
+
+            speaker = PvSpeaker(
+                sample_rate=sample_rate,
+                bits_per_sample=bits_per_sample,
             )
-            stream.write(data)
-            stream.stop_stream()
-            stream.close()
-            pya.terminate()
+            speaker.start()
+            speaker.write(pcm_data)
+            speaker.flush()
+            speaker.stop()
+            speaker.delete()
