@@ -14,11 +14,6 @@ import winsound
 from PIL import Image, ImageEnhance
 from bottle import Bottle, request, response, HTTP_CODES
 from bs4 import BeautifulSoup as bs
-try:
-    from post import post
-except ModuleNotFoundError as e:
-    print(f'\033[33;1m{e}: post_template.py を参考に post.py を作成してください\033[m')
-    exit(1)
 from pystray import Icon, Menu, MenuItem
 from tenacity import RetryError
 import darkdetect as dd
@@ -54,7 +49,7 @@ ctypes.windll['uxtheme.dll'][135](PreferredAppMode[dd.theme()])
 # logger settings
 logname = getLog(TITLE, 'log.log')
 logging.basicConfig(
-    format="%(asctime)s [%(levelname)s] %(message)s",
+    format="%(asctime)s [%(levelname)s] %(name)s %(message)s",
     handlers=[
         logging.handlers.RotatingFileHandler(logname, encoding='utf-8', maxBytes=1000000, backupCount=0),
         logging.StreamHandler(),
@@ -62,7 +57,14 @@ logging.basicConfig(
     datefmt='%Y/%m/%d %X'
 )
 logger = logging.getLogger(TITLE)
-logger.setLevel(logging.DEBUG)
+level = logging.DEBUG
+logger.setLevel(level)
+logging.getLogger('post').setLevel(level)
+try:
+    from post import post
+except ModuleNotFoundError as e:
+    print(f'\033[33;1m{e}: post_template.py を参考に post.py を作成してください\033[m')
+    exit(1)
 
 
 class Sound(Enum):

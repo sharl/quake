@@ -16,5 +16,11 @@
 # 上記の固定フォーマットで本体から呼ばれるので、連携するサービスに合わせて利用してください
 # ファイル名を post.py として配置してください
 #
+import logging
+
+logger = logging.getLogger(__name__)
+logger.debug('loaded')
+
+
 def post(data):
     pass
