@@ -49,7 +49,7 @@ ctypes.windll['uxtheme.dll'][135](PreferredAppMode[dd.theme()])
 # logger settings
 logname = getLog(TITLE, 'log.log')
 logging.basicConfig(
-    format="%(asctime)s [%(levelname)s] %(name)s %(message)s",
+    format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[
         logging.handlers.RotatingFileHandler(logname, encoding='utf-8', maxBytes=1000000, backupCount=0),
         logging.StreamHandler(),
