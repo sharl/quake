@@ -93,6 +93,7 @@ def post(data: dict) -> None:
         on_click=on_click,
         audio={'silent': 'true'},
     )
-    if image_url and tag == TAG_INFO:
-        # 震度分布図が出たら通知から震央を消す
-        ToastNotificationManager.history.remove(TAG_EPICENTER)
+    # TODO: fix error at 2026/10/29
+    # if image_url and tag == TAG_INFO:
+    #     # 震度分布図が出たら通知から震央を消す
+    #     ToastNotificationManager.history.remove(TAG_EPICENTER)
