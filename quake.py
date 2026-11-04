@@ -411,7 +411,7 @@ class taskTray:
                                 logger.warning(f'Task post error {now}')
                             except requests.exceptions.Timeout as e:
                                 logger.warning(f'Task post Timeout {e} {now}')
-            except requests.exceptions.Timeout:
+            except (requests.exceptions.Timeout, ConnectionResetError):
                 pass
             except Exception as e:
                 logger.warning(f'Task Exception {e} {now}')
