@@ -1,13 +1,20 @@
 # -*- coding: utf-8 -*-
+from importlib.metadata import version
 import io
 import tempfile
 
 from PIL import Image
-from win11toast import notify
+from win11toast import notify, DEFAULT_APP_ID
 from winrt.windows.ui.notifications import ToastNotificationManager
+# pywinrt version detection
+if version('winrt-Windows.UI.Notifications').startswith('3'):
+    clear_toast = ToastNotificationManager.history.remove_grouped_tag_with_id
+else:
+    clear_toast = ToastNotificationManager.history.remove
 from winrt.windows.ui.viewmanagement import UISettings
 import requests
 
+DEFAULT_GROUP = 'quake plugin'
 TAG_INFO = 'info'
 TAG_EPICENTER = 'epicenter info'
 
@@ -47,7 +54,7 @@ def post(data: dict) -> None:
     title = None
     body = None
     image = None
-    group = None
+    group = DEFAULT_GROUP
     tag = None
 
     m = text.split()
@@ -65,7 +72,6 @@ def post(data: dict) -> None:
             tag = TAG_INFO
         else:
             title = text
-            # group = title
             tag = TAG_EPICENTER
 
         with requests.get(image_url, timeout=10) as r:
@@ -93,7 +99,6 @@ def post(data: dict) -> None:
         on_click=on_click,
         audio={'silent': 'true'},
     )
-    # TODO: fix error at 2026/10/29
-    # if image_url and tag == TAG_INFO:
-    #     # 震度分布図が出たら通知から震央を消す
-    #     ToastNotificationManager.history.remove(TAG_EPICENTER)
+    if image_url and tag == TAG_INFO:
+        # 震度分布図が出たら通知から震央を消す
+        clear_toast(TAG_EPICENTER, DEFAULT_GROUP, DEFAULT_APP_ID)
