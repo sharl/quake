@@ -90,6 +90,8 @@ def post(data: dict) -> None:
         group = title
         tag = TAG_INFO
 
+    # 通知から同一の grouped tag を消す
+    clear_toast(tag, group, DEFAULT_APP_ID)
     notify(
         title,
         body=body,
