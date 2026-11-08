@@ -23,7 +23,6 @@ Copy-Item post_template.py post.py
 の代わりに
 
 ```powershell
-pip install win11toast winrt-Windows.UI.ViewManagement
 Copy-Item post_notify.py post.py
 ```
 
@@ -38,7 +37,6 @@ python -m venv .venv
 .\.venv\Scripts\activate
 pip install -r requirements.txt
 Copy-Item post_template.py post.py
-# pip install win11toast winrt-Windows.UI.ViewManagement
 # Copy-Item post_notify.py post.py
 pythonw quake.py
 ```
