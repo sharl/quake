@@ -481,7 +481,7 @@ class taskTray:
                     ibegin = 0          # reset information start time
                     break
             except Exception as e:
-                logger.debug(f'Check list Exception {e}')
+                logger.debug(f'Check list Exception {type(e)} {e}')
 
             if time.perf_counter() - ibegin >= CHECK_SPAN:
                 break
@@ -526,15 +526,15 @@ class taskTray:
                                 except requests.exceptions.Timeout as e:
                                     logger.warning(f'Check post Timeout {e} {img_url}')
                                 except Exception as e:
-                                    logger.warning(f'Check post error {e} {img_url}')
+                                    logger.warning(f'Check post error {type(e)} {e} {img_url}')
                     else:
                         logger.warning(f'status code {r.status_code} {url}')
                         if r.status_code == 404:
                             rbegin = 0
-            except requests.exceptions.Timeout as e:
-                logger.warning(f'Check Timeout {e} {url}')
+            except requests.exceptions.Timeout:
+                logger.warning(f'Check Timeout {url}')
             except Exception as e:
-                logger.warning(f'Check Exception {e} {url}')
+                logger.warning(f'Check Exception {type(e)} {e} {url}')
 
             if time.perf_counter() - rbegin >= CHECK_SPAN:
                 break
