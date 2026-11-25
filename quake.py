@@ -411,10 +411,10 @@ class taskTray:
                                 logger.warning(f'Task post error {now}')
                             except requests.exceptions.Timeout as e:
                                 logger.warning(f'Task post Timeout {e} {now}')
-            except (requests.exceptions.Timeout, ConnectionResetError):
+            except (requests.exceptions.Timeout, requests.exceptions.ConnectionError, ConnectionResetError):
                 pass
             except Exception as e:
-                logger.warning(f'Task Exception {e} {now}')
+                logger.warning(f'Task Exception {type(e)} {e} {now}')
 
             # 監視スレッドが終了していたらスレッド・情報解放
             ths = self.threads.copy()
